@@ -1,0 +1,29 @@
+# Manifest for source distribution
+include README.md
+include LICENSE
+include CHANGELOG.md
+include CONTRIBUTING.md
+include QUICKSTART.md
+include pyproject.toml
+
+# Documentation
+recursive-include docs *.md
+
+# Configuration examples
+recursive-include config *.yml *.yaml
+
+# Test examples
+recursive-include tests *.py *.ipynb
+
+# CI/CD examples
+include .github/workflows/*.yml
+include azure-pipelines.yml
+
+# Exclude build artifacts
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude __pycache__
+global-exclude .DS_Store
+global-exclude *.so
+global-exclude .dbx-test-results
+

@@ -1,0 +1,245 @@
+"""
+Notebook runner for executing tests directly in Databricks notebooks.
+
+This module provides utilities for running tests interactively in Databricks notebooks
+without using the CLI.
+"""
+
+from typing import Dict, Any, Optional, List
+import sys
+import traceback
+from databricks_notebook_test_framework.testing import (
+    NotebookTestFixture,
+    discover_fixtures,
+    run_tests as run_all_tests,
+)
+
+
+class NotebookRunner:
+    """
+    Runner for executing tests directly in Databricks notebooks.
+    
+    This provides a convenient way to run tests interactively during development.
+    """
+    
+    def __init__(self, verbose: bool = True):
+        """
+        Initialize the notebook runner.
+        
+        Args:
+            verbose: Whether to print detailed output
+        """
+        self.verbose = verbose
+    
+    def run(self, test_fixture_class: Optional[type] = None) -> Dict[str, Any]:
+        """
+        Run tests from the current notebook.
+        
+        Args:
+            test_fixture_class: Optional specific test fixture class to run.
+                              If None, discovers and runs all fixtures in the notebook.
+        
+        Returns:
+            Dictionary with test results
+        
+        Example:
+            # Run all tests in the notebook
+            runner = NotebookRunner()
+            results = runner.run()
+            
+            # Run a specific test class
+            results = runner.run(TestMyFeature)
+        """
+        if test_fixture_class:
+            return self._run_single_fixture(test_fixture_class)
+        else:
+            return self._run_all_fixtures()
+    
+    def _run_single_fixture(self, fixture_class: type) -> Dict[str, Any]:
+        """Run a single test fixture."""
+        if not issubclass(fixture_class, NotebookTestFixture):
+            raise ValueError(
+                f"{fixture_class.__name__} must inherit from NotebookTestFixture"
+            )
+        
+        if self.verbose:
+            print(f"\n{'='*60}")
+            print(f"Running {fixture_class.__name__}")
+            print(f"{'='*60}\n")
+        
+        fixture = fixture_class()
+        results = fixture.execute_tests()
+        summary = fixture.get_results()
+        
+        if self.verbose:
+            self._print_summary(summary)
+        
+        return summary
+    
+    def _run_all_fixtures(self) -> Dict[str, Any]:
+        """Discover and run all test fixtures in the current notebook."""
+        # Get the caller's globals to discover fixtures
+        frame = sys._getframe(2)  # Go up 2 frames to get notebook scope
+        caller_globals = frame.f_globals
+        
+        fixtures = discover_fixtures(caller_globals)
+        
+        if not fixtures:
+            print("No test fixtures found in the notebook.")
+            print("Make sure your test classes inherit from NotebookTestFixture.")
+            return {
+                "total": 0,
+                "passed": 0,
+                "failed": 0,
+                "errors": 0,
+                "fixtures": [],
+            }
+        
+        all_results = []
+        fixture_summaries = []
+        
+        for fixture_class in fixtures:
+            if self.verbose:
+                print(f"\n{'='*60}")
+                print(f"Running {fixture_class.__name__}")
+                print(f"{'='*60}\n")
+            
+            fixture = fixture_class()
+            results = fixture.execute_tests()
+            summary = fixture.get_results()
+            
+            fixture_summaries.append({
+                "fixture_name": fixture_class.__name__,
+                "summary": summary,
+            })
+            
+            all_results.extend(results)
+        
+        # Aggregate results
+        total = len(all_results)
+        passed = sum(1 for r in all_results if r.status == "passed")
+        failed = sum(1 for r in all_results if r.status == "failed")
+        errors = sum(1 for r in all_results if r.status == "error")
+        
+        aggregated = {
+            "total": total,
+            "passed": passed,
+            "failed": failed,
+            "errors": errors,
+            "fixtures": fixture_summaries,
+        }
+        
+        if self.verbose:
+            self._print_summary(aggregated)
+        
+        return aggregated
+    
+    def _print_summary(self, summary: Dict[str, Any]):
+        """Print test summary."""
+        print(f"\n{'='*60}")
+        print(f"SUMMARY")
+        print(f"{'='*60}")
+        print(f"Total Tests: {summary['total']}")
+        print(f"✓ Passed: {summary['passed']}")
+        print(f"✗ Failed: {summary['failed']}")
+        print(f"✗ Errors: {summary['errors']}")
+        
+        if summary['passed'] == summary['total'] and summary['total'] > 0:
+            print(f"\n🎉 All tests passed!")
+        elif summary['failed'] > 0 or summary['errors'] > 0:
+            print(f"\n❌ Some tests failed")
+        
+        print(f"{'='*60}\n")
+
+
+def run_notebook_tests(test_fixture_class: Optional[type] = None, verbose: bool = True) -> Dict[str, Any]:
+    """
+    Convenience function to run tests directly in a Databricks notebook.
+    
+    This is the simplest way to run tests interactively.
+    
+    Args:
+        test_fixture_class: Optional specific test fixture class to run.
+                          If None, discovers and runs all fixtures.
+        verbose: Whether to print detailed output
+    
+    Returns:
+        Dictionary with test results
+    
+    Example:
+        # At the end of your test notebook, add:
+        from databricks_notebook_test_framework import run_notebook_tests
+        
+        # Run all tests
+        run_notebook_tests()
+        
+        # Or run a specific test class
+        run_notebook_tests(TestMyFeature)
+    """
+    runner = NotebookRunner(verbose=verbose)
+    return runner.run(test_fixture_class)
+
+
+def install_notebook_package(package_path: str):
+    """
+    Install the test framework package in the notebook.
+    
+    Args:
+        package_path: Path to the wheel file (DBFS path or local path)
+    
+    Example:
+        # Install from DBFS
+        install_notebook_package("/dbfs/FileStore/wheels/databricks_notebook_test_framework-0.1.0-py3-none-any.whl")
+        
+        # Install from PyPI (if uploaded)
+        install_notebook_package("databricks-notebook-test-framework")
+    """
+    import subprocess
+    
+    print(f"Installing {package_path}...")
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "pip", "install", package_path],
+            capture_output=True,
+            text=True,
+        )
+        
+        if result.returncode == 0:
+            print("✓ Installation successful!")
+            print("\nYou can now use:")
+            print("  from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests")
+        else:
+            print(f"✗ Installation failed:")
+            print(result.stderr)
+            
+    except Exception as e:
+        print(f"✗ Installation failed: {e}")
+        traceback.print_exc()
+
+
+# Simplified API for notebook usage
+def quick_test(test_class: type) -> bool:
+    """
+    Quick test runner that returns True/False for pass/fail.
+    
+    Useful for simple assertions in notebook cells.
+    
+    Args:
+        test_class: Test fixture class to run
+    
+    Returns:
+        True if all tests passed, False otherwise
+    
+    Example:
+        class TestQuick(NotebookTestFixture):
+            def test_something(self):
+                assert 1 + 1 == 2
+        
+        # Returns True/False
+        passed = quick_test(TestQuick)
+        assert passed, "Tests failed!"
+    """
+    runner = NotebookRunner(verbose=True)
+    results = runner.run(test_class)
+    return results['failed'] == 0 and results['errors'] == 0
+

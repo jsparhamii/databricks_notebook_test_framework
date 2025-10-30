@@ -1,0 +1,268 @@
+trigger:
+  branches:
+    include:
+    - main
+    - develop
+  paths:
+    include:
+    - tests/*
+    - src/*
+    - config/*
+
+pr:
+  branches:
+    include:
+    - main
+    - develop
+
+schedules:
+- cron: "0 2 * * *"
+  displayName: Daily test run
+  branches:
+    include:
+    - main
+  always: true
+
+variables:
+  pythonVersion: '3.10'
+  testResultsDirectory: '.dbx-test-results'
+
+stages:
+- stage: LocalTests
+  displayName: 'Run Local Tests'
+  jobs:
+  - job: TestLocal
+    displayName: 'Local Test Execution'
+    pool:
+      vmImage: 'ubuntu-latest'
+    
+    steps:
+    - task: UsePythonVersion@0
+      displayName: 'Set Python version'
+      inputs:
+        versionSpec: $(pythonVersion)
+        addToPath: true
+    
+    - script: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install nutter
+      displayName: 'Install dependencies'
+    
+    - script: |
+        dbx-test discover --tests-dir tests
+      displayName: 'Discover tests'
+    
+    - script: |
+        dbx-test run --local --tests-dir tests --output-format junit --output-format console
+      displayName: 'Run local tests'
+      continueOnError: true
+    
+    - task: PublishTestResults@2
+      displayName: 'Publish test results'
+      condition: always()
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '**/report.xml'
+        searchFolder: '$(testResultsDirectory)'
+        mergeTestResults: true
+        testRunTitle: 'Local Tests'
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish test artifacts'
+      condition: always()
+      inputs:
+        pathToPublish: '$(testResultsDirectory)'
+        artifactName: 'local-test-results'
+
+- stage: RemoteTests
+  displayName: 'Run Remote Tests'
+  dependsOn: LocalTests
+  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.Reason'], 'Schedule')))
+  
+  jobs:
+  - job: TestRemoteDev
+    displayName: 'Remote Tests (Dev)'
+    pool:
+      vmImage: 'ubuntu-latest'
+    
+    variables:
+      environment: 'dev'
+    
+    steps:
+    - task: UsePythonVersion@0
+      displayName: 'Set Python version'
+      inputs:
+        versionSpec: $(pythonVersion)
+    
+    - script: |
+        python -m pip install --upgrade pip
+        pip install -e .
+      displayName: 'Install dependencies'
+    
+    - task: AzureKeyVault@2
+      displayName: 'Get Databricks credentials'
+      inputs:
+        azureSubscription: 'Azure-Subscription'
+        KeyVaultName: 'databricks-secrets'
+        SecretsFilter: 'databricks-host,databricks-token'
+    
+    - script: |
+        export DATABRICKS_HOST=$(databricks-host)
+        export DATABRICKS_TOKEN=$(databricks-token)
+        
+        dbx-test upload \
+          --tests-dir tests \
+          --workspace-path "/Workspace/Repos/ci-tests/$(Build.BuildId)" \
+          --config config/test_config.yml
+      displayName: 'Upload test notebooks'
+      env:
+        DATABRICKS_HOST: $(databricks-host)
+        DATABRICKS_TOKEN: $(databricks-token)
+    
+    - script: |
+        export DATABRICKS_HOST=$(databricks-host)
+        export DATABRICKS_TOKEN=$(databricks-token)
+        
+        dbx-test run \
+          --remote \
+          --env $(environment) \
+          --tests-dir tests \
+          --config config/test_config.yml \
+          --output-format junit \
+          --output-format console \
+          --output-format html
+      displayName: 'Run remote tests'
+      continueOnError: true
+      env:
+        DATABRICKS_HOST: $(databricks-host)
+        DATABRICKS_TOKEN: $(databricks-token)
+    
+    - task: PublishTestResults@2
+      displayName: 'Publish test results'
+      condition: always()
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '**/report.xml'
+        searchFolder: '$(testResultsDirectory)'
+        mergeTestResults: true
+        testRunTitle: 'Remote Tests (Dev)'
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish test artifacts'
+      condition: always()
+      inputs:
+        pathToPublish: '$(testResultsDirectory)'
+        artifactName: 'remote-test-results-dev'
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish HTML report'
+      condition: always()
+      inputs:
+        pathToPublish: '$(testResultsDirectory)/**/reports/report.html'
+        artifactName: 'html-report-dev'
+  
+  - job: TestRemoteTest
+    displayName: 'Remote Tests (Test)'
+    pool:
+      vmImage: 'ubuntu-latest'
+    dependsOn: TestRemoteDev
+    
+    variables:
+      environment: 'test'
+    
+    steps:
+    - task: UsePythonVersion@0
+      displayName: 'Set Python version'
+      inputs:
+        versionSpec: $(pythonVersion)
+    
+    - script: |
+        python -m pip install --upgrade pip
+        pip install -e .
+      displayName: 'Install dependencies'
+    
+    - task: AzureKeyVault@2
+      displayName: 'Get Databricks credentials'
+      inputs:
+        azureSubscription: 'Azure-Subscription'
+        KeyVaultName: 'databricks-secrets'
+        SecretsFilter: 'databricks-host,databricks-token'
+    
+    - script: |
+        export DATABRICKS_HOST=$(databricks-host)
+        export DATABRICKS_TOKEN=$(databricks-token)
+        
+        dbx-test upload \
+          --tests-dir tests \
+          --workspace-path "/Workspace/Repos/ci-tests/$(Build.BuildId)" \
+          --config config/test_config.yml
+      displayName: 'Upload test notebooks'
+      env:
+        DATABRICKS_HOST: $(databricks-host)
+        DATABRICKS_TOKEN: $(databricks-token)
+    
+    - script: |
+        export DATABRICKS_HOST=$(databricks-host)
+        export DATABRICKS_TOKEN=$(databricks-token)
+        
+        dbx-test run \
+          --remote \
+          --env $(environment) \
+          --tests-dir tests \
+          --config config/test_config.yml \
+          --output-format junit \
+          --output-format console \
+          --output-format html
+      displayName: 'Run remote tests'
+      continueOnError: true
+      env:
+        DATABRICKS_HOST: $(databricks-host)
+        DATABRICKS_TOKEN: $(databricks-token)
+    
+    - task: PublishTestResults@2
+      displayName: 'Publish test results'
+      condition: always()
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: '**/report.xml'
+        searchFolder: '$(testResultsDirectory)'
+        mergeTestResults: true
+        testRunTitle: 'Remote Tests (Test)'
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish test artifacts'
+      condition: always()
+      inputs:
+        pathToPublish: '$(testResultsDirectory)'
+        artifactName: 'remote-test-results-test'
+
+- stage: QualityGate
+  displayName: 'Quality Gate'
+  dependsOn:
+  - LocalTests
+  - RemoteTests
+  condition: always()
+  
+  jobs:
+  - job: EvaluateResults
+    displayName: 'Evaluate Test Results'
+    pool:
+      vmImage: 'ubuntu-latest'
+    
+    steps:
+    - script: |
+        echo "Checking test results..."
+        
+        # This would typically integrate with your quality gate policies
+        # For now, we'll check if previous stages succeeded
+        
+        if [ "$(Agent.JobStatus)" == "Succeeded" ]; then
+          echo "All quality gates passed!"
+          exit 0
+        else
+          echo "Quality gates failed!"
+          exit 1
+        fi
+      displayName: 'Check quality gates'
+

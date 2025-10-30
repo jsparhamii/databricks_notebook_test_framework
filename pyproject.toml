@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "databricks-notebook-test-framework"
+version = "0.1.0"
+description = "Automated testing framework for Databricks notebooks"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Your Name", email = "your.email@example.com"}
+]
+keywords = ["databricks", "testing", "notebooks", "unit-testing", "spark"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "databricks-sdk>=0.20.0",
+    "pyyaml>=6.0",
+    "junit-xml>=1.9",
+    "rich>=13.0.0",
+    "click>=8.0.0",
+    "nbformat>=5.0.0",
+    "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+]
+
+[project.scripts]
+dbx-test = "databricks_notebook_test_framework.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/yourusername/databricks-notebook-test-framework"
+Documentation = "https://github.com/yourusername/databricks-notebook-test-framework/docs"
+Repository = "https://github.com/yourusername/databricks-notebook-test-framework"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["databricks_notebook_test_framework*"]
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
