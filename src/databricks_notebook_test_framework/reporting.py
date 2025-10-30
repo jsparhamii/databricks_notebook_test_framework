@@ -68,10 +68,6 @@ class TestReporter:
             name="Databricks Notebook Tests",
             test_cases=test_cases,
             timestamp=results.get("run_timestamp"),
-            tests=summary.get("total", 0),
-            failures=summary.get("failed", 0),
-            errors=summary.get("errors", 0),
-            skipped=summary.get("skipped", 0),
         )
         
         # Write XML

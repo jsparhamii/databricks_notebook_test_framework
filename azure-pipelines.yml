@@ -1,3 +1,26 @@
+# Azure DevOps Pipeline for Databricks Notebook Test Framework
+#
+# This pipeline provides automated testing for Databricks notebooks with:
+# - Local test execution on PR and commit
+# - Remote test execution on Databricks clusters (dev/test environments)
+# - Pytest-style automatic test discovery (test_* and *_test patterns)
+# - Multiple output formats (JUnit XML, HTML, Console)
+# - Quality gates and test result publishing
+#
+# Required Azure Key Vault secrets:
+# - databricks-host: Databricks workspace URL
+# - databricks-token: Databricks personal access token
+#
+# Authentication:
+# - The Databricks SDK automatically handles authentication via environment variables
+# - Set DATABRICKS_HOST and DATABRICKS_TOKEN in the environment
+# - No need to configure ~/.databrickscfg or use --profile flag
+#
+# Usage:
+# - PRs and commits to main/develop trigger local tests
+# - Successful local tests trigger remote tests (main branch only)
+# - Daily scheduled tests run at 2 AM UTC
+
 trigger:
   branches:
     include:
@@ -46,7 +69,6 @@ stages:
     - script: |
         python -m pip install --upgrade pip
         pip install -e .
-        pip install nutter
       displayName: 'Install dependencies'
     
     - script: |
@@ -54,7 +76,7 @@ stages:
       displayName: 'Discover tests'
     
     - script: |
-        dbx-test run --local --tests-dir tests --output-format junit --output-format console
+        dbx-test run --local --tests-dir tests --output-format junit --output-format console --verbose
       displayName: 'Run local tests'
       continueOnError: true
     
@@ -108,9 +130,6 @@ stages:
         SecretsFilter: 'databricks-host,databricks-token'
     
     - script: |
-        export DATABRICKS_HOST=$(databricks-host)
-        export DATABRICKS_TOKEN=$(databricks-token)
-        
         dbx-test upload \
           --tests-dir tests \
           --workspace-path "/Workspace/Repos/ci-tests/$(Build.BuildId)" \
@@ -121,9 +140,6 @@ stages:
         DATABRICKS_TOKEN: $(databricks-token)
     
     - script: |
-        export DATABRICKS_HOST=$(databricks-host)
-        export DATABRICKS_TOKEN=$(databricks-token)
-        
         dbx-test run \
           --remote \
           --env $(environment) \
@@ -131,7 +147,8 @@ stages:
           --config config/test_config.yml \
           --output-format junit \
           --output-format console \
-          --output-format html
+          --output-format html \
+          --verbose
       displayName: 'Run remote tests'
       continueOnError: true
       env:
@@ -190,9 +207,6 @@ stages:
         SecretsFilter: 'databricks-host,databricks-token'
     
     - script: |
-        export DATABRICKS_HOST=$(databricks-host)
-        export DATABRICKS_TOKEN=$(databricks-token)
-        
         dbx-test upload \
           --tests-dir tests \
           --workspace-path "/Workspace/Repos/ci-tests/$(Build.BuildId)" \
@@ -203,9 +217,6 @@ stages:
         DATABRICKS_TOKEN: $(databricks-token)
     
     - script: |
-        export DATABRICKS_HOST=$(databricks-host)
-        export DATABRICKS_TOKEN=$(databricks-token)
-        
         dbx-test run \
           --remote \
           --env $(environment) \
@@ -213,7 +224,8 @@ stages:
           --config config/test_config.yml \
           --output-format junit \
           --output-format console \
-          --output-format html
+          --output-format html \
+          --verbose
       displayName: 'Run remote tests'
       continueOnError: true
       env:

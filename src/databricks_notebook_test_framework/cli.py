@@ -5,6 +5,7 @@ Command-line interface for the test framework.
 import sys
 import click
 from pathlib import Path
+from datetime import datetime
 from rich.console import Console
 
 from databricks_notebook_test_framework import __version__
@@ -202,6 +203,46 @@ def run(local, remote, env, parallel, output_format, config, profile, verbose, t
                 failed = sum(1 for r in results if r.get("status") == "failed")
                 
                 console.print(f"Total: {total}, Passed: [green]{passed}[/green], Failed: [red]{failed}[/red]")
+                
+                # Generate reports based on output_format
+                from databricks_notebook_test_framework.reporting import TestReporter
+                from databricks_notebook_test_framework.artifacts import ArtifactManager
+                
+                artifact_manager = ArtifactManager(test_config.reporting.output_dir)
+                reporter = TestReporter(verbose=verbose)
+                
+                # Convert workspace test results to standard format
+                formatted_results = {
+                    "summary": {
+                        "total": total,
+                        "passed": passed,
+                        "failed": failed,
+                        "errors": 0,
+                    },
+                    "tests": results,
+                    "timestamp": datetime.now().isoformat(),
+                }
+                
+                # Save results
+                artifact_manager.save_results(formatted_results)
+                
+                # Generate reports
+                for fmt in output_format:
+                    if fmt == "console":
+                        # Already displayed above
+                        pass
+                    elif fmt == "junit":
+                        output_path = artifact_manager.save_report("", "report.xml")
+                        reporter.generate_junit_xml(formatted_results, output_path)
+                        console.print(f"\n[green]✓ JUnit report saved to: {output_path}[/green]")
+                    elif fmt == "json":
+                        output_path = artifact_manager.save_report("", "report.json")
+                        reporter.generate_json_report(formatted_results, output_path)
+                        console.print(f"[green]✓ JSON report saved to: {output_path}[/green]")
+                    elif fmt == "html":
+                        output_path = artifact_manager.save_report("", "report.html")
+                        reporter.generate_html_report(formatted_results, output_path)
+                        console.print(f"[green]✓ HTML report saved to: {output_path}[/green]")
                 
                 if failed > 0:
                     console.print("\n[red]❌ Some tests failed[/red]")
