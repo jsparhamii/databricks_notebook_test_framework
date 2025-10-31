@@ -59,6 +59,11 @@ def cli():
     help="Output format(s): console, junit, json, html",
 )
 @click.option(
+    "--output-dir",
+    default=None,
+    help="Output directory for reports (overrides config file, default: .dbx-test-results)",
+)
+@click.option(
     "--config",
     default="config/test_config.yml",
     help="Path to configuration file",
@@ -84,7 +89,7 @@ def cli():
     default=False,
     help="Tests are already in Databricks workspace (don't upload)",
 )
-def run(local, remote, env, parallel, output_format, config, profile, verbose, tests_dir, workspace_tests):
+def run(local, remote, env, parallel, output_format, output_dir, config, profile, verbose, tests_dir, workspace_tests):
     """Execute test notebooks.
     
     Automatically discovers test notebooks matching pytest-style patterns:
@@ -125,6 +130,12 @@ def run(local, remote, env, parallel, output_format, config, profile, verbose, t
         # Override parallel setting if specified
         if parallel:
             test_config.execution.parallel = True
+        
+        # Override output directory if specified
+        if output_dir:
+            test_config.reporting.output_dir = output_dir
+            if verbose:
+                console.print(f"[dim]Using output directory: {output_dir}[/dim]")
         
         # Handle workspace tests vs local tests
         if workspace_tests:

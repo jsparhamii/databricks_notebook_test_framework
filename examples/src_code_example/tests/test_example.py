@@ -1,0 +1,51 @@
+# Databricks notebook source
+# MAGIC %run "../src/example"
+
+# COMMAND ----------
+
+from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+import json
+
+# COMMAND ----------
+
+class TestMyFirstTest(NotebookTestFixture):
+    def __init__(self):
+        super().__init__()
+        
+        # Create test data
+        self.df = spark.createDataFrame([
+            (1, "Alice", 100),
+            (2, "Bob", 200),
+        ], ["id", "name", "amount"])
+        self.df.createOrReplaceTempView("test_data")
+
+    def test_sum_column(self):
+        """Test the sum_column function."""
+        result = sum_column(self.df.select("amount"), "amount", "total")      
+        assert result.collect()[0]["total"] == 300, "Expected sum to be 300"
+
+    def test_row_count(self):
+        """Test we have 2 rows."""
+        result = spark.sql("SELECT * FROM test_data")
+        assert result.count() == 2, "Expected 2 rows"
+    
+    def test_total_amount(self):
+        """Test total amount is 300."""
+        result = spark.sql("SELECT SUM(amount) as total FROM test_data")
+        total = result.collect()[0]["total"] + 1  # Intentional error for demo
+        assert total == 300, f"Expected 300, got {total}"
+    
+    def run_cleanup(self):
+        """Clean up test data."""
+        spark.sql("DROP VIEW IF EXISTS test_data")
+
+# COMMAND ----------
+
+# Run tests and return results
+results = run_notebook_tests(TestMyFirstTest)
+
+# COMMAND ----------
+
+# Return results to CLI
+dbutils.notebook.exit(json.dumps(results))
+

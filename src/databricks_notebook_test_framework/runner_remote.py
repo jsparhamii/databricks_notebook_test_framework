@@ -32,6 +32,88 @@ class RemoteTestRunner:
         # Initialize Databricks client using workspace auth config
         auth_config = config.workspace.get_auth_config()
         self.db_helper = DatabricksHelper(**auth_config)
+        
+        # Track uploaded wheel for cleanup
+        self.uploaded_wheel_path = None
+    
+    def build_and_upload_wheel(self, workspace_dir: str) -> Optional[str]:
+        """
+        Build the framework wheel and upload it to workspace.
+        
+        Args:
+            workspace_dir: Workspace directory for upload
+        
+        Returns:
+            Workspace path to uploaded wheel, or None if failed
+        """
+        import subprocess
+        import os
+        from pathlib import Path
+        
+        try:
+            # Find project root (where pyproject.toml is)
+            current_file = Path(__file__).resolve()
+            project_root = current_file.parent.parent.parent.parent
+            
+            if not (project_root / "pyproject.toml").exists():
+                if self.verbose:
+                    self.console.print("[yellow]Warning: Could not find pyproject.toml, skipping wheel upload[/yellow]")
+                return None
+            
+            # Build wheel
+            if self.verbose:
+                self.console.print("[dim]Building framework wheel...[/dim]")
+            
+            dist_dir = project_root / "dist"
+            subprocess.run(
+                ["python", "-m", "build", "--wheel", "--outdir", str(dist_dir)],
+                cwd=project_root,
+                check=True,
+                capture_output=not self.verbose,
+            )
+            
+            # Find the most recent wheel
+            wheel_files = list(dist_dir.glob("databricks_notebook_test_framework-*.whl"))
+            if not wheel_files:
+                if self.verbose:
+                    self.console.print("[yellow]Warning: No wheel file found after build[/yellow]")
+                return None
+            
+            # Get the most recent wheel
+            wheel_file = max(wheel_files, key=lambda p: p.stat().st_mtime)
+            
+            # Upload to workspace
+            workspace_wheel_path = f"{workspace_dir}/{wheel_file.name}"
+            
+            if self.verbose:
+                self.console.print(f"[dim]Uploading wheel to {workspace_wheel_path}...[/dim]")
+            
+            self.db_helper.upload_file_to_workspace(
+                str(wheel_file),
+                workspace_wheel_path
+            )
+            
+            if self.verbose:
+                self.console.print(f"[green]✓ Wheel uploaded successfully[/green]")
+            
+            self.uploaded_wheel_path = workspace_wheel_path
+            return workspace_wheel_path
+            
+        except Exception as e:
+            if self.verbose:
+                self.console.print(f"[yellow]Warning: Could not build/upload wheel: {e}[/yellow]")
+            return None
+    
+    def cleanup_wheel(self) -> None:
+        """Clean up uploaded wheel from workspace."""
+        if self.uploaded_wheel_path:
+            try:
+                self.db_helper.delete_workspace_file(self.uploaded_wheel_path)
+                if self.verbose:
+                    self.console.print(f"[dim]Cleaned up wheel: {self.uploaded_wheel_path}[/dim]")
+            except Exception as e:
+                if self.verbose:
+                    self.console.print(f"[dim]Could not clean up wheel: {e}[/dim]")
     
     def run_test(
         self,
@@ -353,102 +435,115 @@ class RemoteTestRunner:
         """
         all_results = []
         
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            BarColumn(),
-            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-            console=self.console,
-        ) as progress:
-            task = progress.add_task(
-                f"Running {len(notebooks)} notebook(s)",
-                total=len(notebooks)
-            )
-            
-            for notebook_path in notebooks:
-                try:
-                    # Run the notebook directly from workspace (no upload)
-                    if self.verbose:
-                        self.console.print(f"[dim]Running workspace notebook: {notebook_path}[/dim]")
-                    
-                    # Determine compute configuration
-                    cluster_spec = self.config.cluster.get_cluster_spec()
-                    cluster_id = self.config.cluster.cluster_id
-                    use_serverless = self.config.cluster.use_serverless()
-                    
-                    # Run notebook directly
-                    run_id = self.db_helper.run_notebook(
-                        notebook_path=notebook_path,
-                        cluster_spec=cluster_spec if not cluster_id and not use_serverless else None,
-                        cluster_id=cluster_id,
-                        use_serverless=use_serverless,
-                        parameters=self.config.parameters,
-                        timeout=self.config.execution.timeout,
-                    )
-                    
-                    # Wait for completion
-                    status = self.db_helper.wait_for_run(
-                        run_id=run_id,
-                        timeout=self.config.execution.timeout,
-                        poll_interval=self.config.execution.poll_interval,
-                    )
-                    
-                    # Get output
-                    output = self.db_helper.get_run_output(run_id)
-                    
-                    if self.verbose and not output:
-                        self.console.print(f"[yellow]Warning: No output received from notebook.[/yellow]")
-                        self.console.print(f"[dim]Make sure your notebook ends with: dbutils.notebook.exit(json.dumps(results))[/dim]")
-                    
-                    # Parse results
-                    test_results = self._parse_test_output(output)
-                    
-                    # Add to results
-                    result = {
-                        "notebook": notebook_path,
-                        "status": "passed" if status.get("result_state") == "SUCCESS" else "failed",
-                        "duration": 0,  # Could calculate from run metadata
-                        "timestamp": datetime.now().isoformat(),
-                        "run_id": run_id,
-                        "tests": test_results,
-                        "error_message": status.get("state_message", "") if status.get("result_state") != "SUCCESS" else "",
-                    }
-                    
-                    # Expand individual test results
-                    if test_results:
-                        for test in test_results:
+        # Build and upload wheel for framework installation
+        wheel_path = self.build_and_upload_wheel(workspace_path)
+        
+        # Prepare library spec if wheel was uploaded
+        libraries = None
+        if wheel_path:
+            libraries = [{"whl": wheel_path}]
+        
+        try:
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                BarColumn(),
+                TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+                console=self.console,
+            ) as progress:
+                task = progress.add_task(
+                    f"Running {len(notebooks)} notebook(s)",
+                    total=len(notebooks)
+                )
+                
+                for notebook_path in notebooks:
+                    try:
+                        # Run the notebook directly from workspace (no upload)
+                        if self.verbose:
+                            self.console.print(f"[dim]Running workspace notebook: {notebook_path}[/dim]")
+                        
+                        # Determine compute configuration
+                        cluster_spec = self.config.cluster.get_cluster_spec()
+                        cluster_id = self.config.cluster.cluster_id
+                        use_serverless = self.config.cluster.use_serverless()
+                        
+                        # Run notebook directly with framework library
+                        run_id = self.db_helper.run_notebook(
+                            notebook_path=notebook_path,
+                            cluster_spec=cluster_spec if not cluster_id and not use_serverless else None,
+                            cluster_id=cluster_id,
+                            use_serverless=use_serverless,
+                            parameters=self.config.parameters,
+                            timeout=self.config.execution.timeout,
+                            libraries=libraries,
+                        )
+                        
+                        # Wait for completion
+                        status = self.db_helper.wait_for_run(
+                            run_id=run_id,
+                            timeout=self.config.execution.timeout,
+                            poll_interval=self.config.execution.poll_interval,
+                        )
+                        
+                        # Get output
+                        output = self.db_helper.get_run_output(run_id)
+                        
+                        if self.verbose and not output:
+                            self.console.print(f"[yellow]Warning: No output received from notebook.[/yellow]")
+                            self.console.print(f"[dim]Make sure your notebook ends with: dbutils.notebook.exit(json.dumps(results))[/dim]")
+                        
+                        # Parse results
+                        test_results = self._parse_test_output(output)
+                        
+                        # Add to results
+                        result = {
+                            "notebook": notebook_path,
+                            "status": "passed" if status.get("result_state") == "SUCCESS" else "failed",
+                            "duration": 0,  # Could calculate from run metadata
+                            "timestamp": datetime.now().isoformat(),
+                            "run_id": run_id,
+                            "tests": test_results,
+                            "error_message": status.get("state_message", "") if status.get("result_state") != "SUCCESS" else "",
+                        }
+                        
+                        # Expand individual test results
+                        if test_results:
+                            for test in test_results:
+                                all_results.append({
+                                    "notebook": notebook_path,
+                                    "test_name": test["name"],
+                                    "status": test["status"],
+                                    "duration": test.get("duration", 0),
+                                    "timestamp": result["timestamp"],
+                                    "run_id": run_id,
+                                    "error_message": test.get("error_message", ""),
+                                })
+                        else:
                             all_results.append({
                                 "notebook": notebook_path,
-                                "test_name": test["name"],
-                                "status": test["status"],
-                                "duration": test.get("duration", 0),
+                                "test_name": "all_tests",
+                                "status": result["status"],
+                                "duration": result["duration"],
                                 "timestamp": result["timestamp"],
                                 "run_id": run_id,
-                                "error_message": test.get("error_message", ""),
+                                "error_message": result.get("error_message", ""),
                             })
-                    else:
+                    
+                    except Exception as e:
+                        self.console.print(f"[red]Error running {notebook_path}: {e}[/red]")
                         all_results.append({
                             "notebook": notebook_path,
                             "test_name": "all_tests",
-                            "status": result["status"],
-                            "duration": result["duration"],
-                            "timestamp": result["timestamp"],
-                            "run_id": run_id,
-                            "error_message": result.get("error_message", ""),
+                            "status": "error",
+                            "duration": 0,
+                            "timestamp": datetime.now().isoformat(),
+                            "error_message": str(e),
                         })
-                
-                except Exception as e:
-                    self.console.print(f"[red]Error running {notebook_path}: {e}[/red]")
-                    all_results.append({
-                        "notebook": notebook_path,
-                        "test_name": "all_tests",
-                        "status": "error",
-                        "duration": 0,
-                        "timestamp": datetime.now().isoformat(),
-                        "error_message": str(e),
-                    })
-                
-                progress.advance(task)
+                    
+                    progress.advance(task)
+        finally:
+            # Clean up uploaded wheel
+            self.cleanup_wheel()
         
         return all_results
     

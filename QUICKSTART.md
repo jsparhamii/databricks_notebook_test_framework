@@ -115,10 +115,18 @@ reporting:
 
 ```bash
 # Run remotely using Databricks CLI authentication
-dbx-test run --remote --tests-dir tests
+dbx-test run --remote --tests-dir /Workspace/Users/user@email.com/project/tests
 
 # Or specify a profile
-dbx-test run --remote --profile dev --tests-dir tests
+dbx-test run --remote --profile dev \
+  --tests-dir /Workspace/Users/user@email.com/project/tests
+
+# With multiple output formats
+dbx-test run --remote \
+  --tests-dir /Workspace/Users/user@email.com/project/tests \
+  --output-format console \
+  --output-format junit \
+  --output-format json
 ```
 
 ## What's Next?
@@ -132,17 +140,23 @@ dbx-test run --remote --profile dev --tests-dir tests
 ### Try More Examples
 
 ```bash
-# Discover all tests
+# Discover all tests (pytest-style: test_* and *_test)
 dbx-test discover --tests-dir tests
 
-# Run specific tests
-dbx-test run --local --pattern "*integration*"
-
-# Generate HTML report
-dbx-test run --local --output-format html
+# Generate HTML report (local tests)
+dbx-test run --local --tests-dir tests --output-format html
 
 # Run tests in parallel (remote)
-dbx-test run --remote --parallel
+dbx-test run --remote --parallel \
+  --tests-dir /Workspace/Users/user@email.com/project/tests
+
+# Verbose output
+dbx-test run --remote --verbose \
+  --tests-dir /Workspace/Users/user@email.com/project/tests
+
+# Run workspace tests (tests already in Databricks)
+dbx-test run --remote --workspace-tests \
+  --tests-dir /Workspace/Users/user@email.com/project/tests
 ```
 
 ### Create More Tests
@@ -157,23 +171,36 @@ dbx-test scaffold data_quality
 ## Common Commands
 
 ```bash
-# Local testing
-dbx-test run --local
+# Local testing (from local tests/ directory)
+dbx-test run --local --tests-dir tests
 
-# Remote testing
-dbx-test run --remote
+# Remote testing (from workspace)
+dbx-test run --remote \
+  --tests-dir /Workspace/Users/user@email.com/project/tests
 
 # With specific profile
-dbx-test run --remote --profile prod
+dbx-test run --remote --profile prod \
+  --tests-dir /Workspace/Users/user@email.com/project/tests
 
-# Discover tests
-dbx-test discover
+# Workspace tests (tests already in Databricks)
+dbx-test run --remote --workspace-tests --profile dev \
+  --tests-dir /Workspace/Users/user@email.com/project/tests
 
-# Generate report from previous run
-dbx-test report
+# Discover tests (local)
+dbx-test discover --tests-dir tests
+
+# Multiple output formats
+dbx-test run --remote \
+  --tests-dir /Workspace/Users/user@email.com/project/tests \
+  --output-format console \
+  --output-format junit \
+  --output-format json \
+  --output-format html
 
 # Upload notebooks to workspace
-dbx-test upload --workspace-path "/Workspace/tests" --profile dev
+dbx-test upload --tests-dir tests \
+  --workspace-path /Workspace/Users/user@email.com/project/tests \
+  --profile dev
 
 # Create new test
 dbx-test scaffold my_test
@@ -322,7 +349,12 @@ class TestCustomerETL(NotebookTestFixture):
 Run it:
 
 ```bash
-dbx-test run --local --pattern "*CustomerETL*"
+# Run locally
+dbx-test run --local --tests-dir tests
+
+# Or run remotely on Databricks
+dbx-test run --remote --profile dev \
+  --tests-dir /Workspace/Users/user@email.com/project/tests
 ```
 
 ## Success! 🎉

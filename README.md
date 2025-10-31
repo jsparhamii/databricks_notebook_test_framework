@@ -107,20 +107,26 @@ reporting:
 **A. Command-Line (CI/CD and Automated Testing)**
 
 ```bash
-# Discover and run all tests (pytest-style: test_* and *_test)
-dbx-test run --local
+# Discover and run all tests locally (pytest-style: test_* and *_test)
+dbx-test run --local --tests-dir tests
 
 # Run remotely on Databricks
-dbx-test run --remote
+dbx-test run --remote --tests-dir /Workspace/Users/user@email.com/project/tests
 
 # Use specific Databricks CLI profile
-dbx-test run --remote --profile prod
-
-# Run tests from specific directory
-dbx-test run --remote --tests-dir tests/integration
+dbx-test run --remote --profile prod \
+  --tests-dir /Workspace/Users/user@email.com/project/tests
 
 # Run tests already in workspace (no upload)
-dbx-test run --remote --workspace-tests --tests-dir "/Workspace/Repos/my-repo/tests"
+dbx-test run --remote --workspace-tests \
+  --tests-dir /Workspace/Users/user@email.com/project/tests
+
+# Multiple output formats
+dbx-test run --remote \
+  --tests-dir /Workspace/Users/user@email.com/project/tests \
+  --output-format console \
+  --output-format junit \
+  --output-format json
 ```
 
 **Test Discovery**: Automatically finds all notebooks matching `test_*` or `*_test` patterns (just like pytest!)
@@ -128,11 +134,11 @@ dbx-test run --remote --workspace-tests --tests-dir "/Workspace/Repos/my-repo/te
 **B. In Databricks Notebook (Interactive Development)**
 
 ```python
-# Install the framework
-%pip install /dbfs/FileStore/wheels/databricks_notebook_test_framework-0.1.0-py3-none-any.whl
+# The framework is automatically installed when running remote tests
+# For interactive notebook development:
 
-# Write and run tests
 from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+import json
 
 class TestMyData(NotebookTestFixture):
     def run_setup(self):
@@ -141,8 +147,11 @@ class TestMyData(NotebookTestFixture):
     def test_count(self):
         assert self.df.count() == 1
 
-# Run tests immediately
-run_notebook_tests()
+# Run tests
+results = run_notebook_tests()
+
+# Return results to CLI (required for --remote execution)
+dbutils.notebook.exit(json.dumps(results))
 ```
 
 **📘 See [Notebook Usage Guide](docs/notebook_usage.md) for detailed examples and patterns.**
@@ -163,27 +172,65 @@ Execute tests locally or remotely.
 - `--remote` - Run tests remotely on Databricks
 - `--workspace-tests` - Tests are already in workspace (don't upload)
 - `--profile PROFILE` - Databricks CLI profile to use (overrides config)
+- `--tests-dir DIR` - Directory containing tests (required)
 - `--env ENV` - Environment (dev/test/prod)
 - `--parallel` - Enable parallel execution
 - `--output-format FORMAT` - Output format (junit/console/json/html)
 - `--config PATH` - Path to config file (default: config/test_config.yml)
-- `--tests-dir DIR` - Directory containing tests (default: tests)
+- `--verbose` - Enable verbose output
+
+**Examples:**
+
+```bash
+# Local testing
+dbx-test run --local --tests-dir tests
+
+# Remote testing
+dbx-test run --remote --tests-dir /Workspace/Users/user@email.com/project/tests
+
+# With profile and multiple formats
+dbx-test run --remote --profile prod \
+  --tests-dir /Workspace/Users/user@email.com/project/tests \
+  --output-format junit \
+  --output-format html
+
+# Workspace tests (already in Databricks)
+dbx-test run --remote --workspace-tests \
+  --tests-dir /Workspace/Users/user@email.com/project/tests \
+  --verbose
+```
 
 ### `dbx-test discover`
 
 Discover all test notebooks in the repository.
 
-### `dbx-test report`
+```bash
+# Discover tests in local directory
+dbx-test discover --tests-dir tests
 
-Generate test report from previous run.
+# With verbose output
+dbx-test discover --tests-dir tests --verbose
+```
 
 ### `dbx-test upload`
 
 Upload test notebooks to Databricks workspace.
 
+```bash
+# Upload local tests to workspace
+dbx-test upload --tests-dir tests \
+  --workspace-path /Workspace/Users/user@email.com/project/tests \
+  --profile dev
+```
+
 ### `dbx-test scaffold`
 
 Create a new test notebook from template.
+
+```bash
+# Create a new test
+dbx-test scaffold my_feature_test
+```
 
 ## Configuration
 
@@ -202,9 +249,8 @@ See [Configuration Guide](docs/configuration.md) for detailed configuration opti
 - [Databricks CLI Authentication](docs/databricks_cli_auth.md) - Authentication setup
 - [Cluster Configuration](docs/cluster_configuration.md) - Compute options (existing/serverless/new)
 - [CI/CD Integration](docs/ci_cd_integration.md) - GitHub Actions, Azure DevOps, etc.
-- [Example Notebook](examples/notebook_test_example.py) - Complete notebook example
-- [Example: Testing src/ Code](examples/src_code_example/) - Test application code pattern
-- [Example: Notebook with Results](examples/test_example_with_results.py) - Notebook that returns results
+- [Example: Testing src/ Code](examples/src_code_example/) - Real workspace example pattern
+- [Publishing to PyPI](PYPI_PUBLISH.md) - How to publish the package
 
 ## Architecture
 
