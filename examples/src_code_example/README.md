@@ -7,12 +7,12 @@ This example demonstrates how to test application code with the Databricks Noteb
 ```
 src_code_example/
 ├── src/
-│   └── example.py          # Application code (functions to test)
+│   └── example          # Application code (functions to test)
 └── tests/
-    └── test_example.py     # Test notebook
+    └── test_example     # Test notebook
 ```
 
-## Application Code (`src/example.py`)
+## Application Code (`src/example`)
 
 Contains a simple function to test:
 
@@ -25,7 +25,7 @@ def sum_column(df, col_name, new_col_name=None):
     return result
 ```
 
-## Test Notebook (`tests/test_example.py`)
+## Test Notebook (`tests/test_example`)
 
 Tests the `sum_column` function:
 
