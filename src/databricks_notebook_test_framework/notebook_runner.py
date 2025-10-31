@@ -5,7 +5,7 @@ This module provides utilities for running tests interactively in Databricks not
 without using the CLI.
 """
 
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 import sys
 import traceback
 from databricks_notebook_test_framework.testing import (
@@ -31,12 +31,13 @@ class NotebookRunner:
         """
         self.verbose = verbose
     
-    def run(self, test_fixture_class: Optional[type] = None) -> Dict[str, Any]:
+    def run(self, test_fixture_class: Optional[Union[type, List[type]]] = None) -> Dict[str, Any]:
         """
         Run tests from the current notebook.
         
         Args:
-            test_fixture_class: Optional specific test fixture class to run.
+            test_fixture_class: Optional test fixture class(es) to run.
+                              Can be a single class, a list of classes, or None.
                               If None, discovers and runs all fixtures in the notebook.
         
         Returns:
@@ -49,11 +50,16 @@ class NotebookRunner:
             
             # Run a specific test class
             results = runner.run(TestMyFeature)
+            
+            # Run multiple test classes
+            results = runner.run([TestMyFirstTest, TestMySecondTest])
         """
-        if test_fixture_class:
-            return self._run_single_fixture(test_fixture_class)
-        else:
+        if test_fixture_class is None:
             return self._run_all_fixtures()
+        elif isinstance(test_fixture_class, list):
+            return self._run_multiple_fixtures(test_fixture_class)
+        else:
+            return self._run_single_fixture(test_fixture_class)
     
     def _run_single_fixture(self, fixture_class: type) -> Dict[str, Any]:
         """Run a single test fixture."""
@@ -75,6 +81,62 @@ class NotebookRunner:
             self._print_summary(summary)
         
         return summary
+    
+    def _run_multiple_fixtures(self, fixture_classes: List[type]) -> Dict[str, Any]:
+        """Run multiple test fixtures."""
+        if not fixture_classes:
+            print("No test fixtures provided.")
+            return {
+                "total": 0,
+                "passed": 0,
+                "failed": 0,
+                "errors": 0,
+                "fixtures": [],
+            }
+        
+        all_results = []
+        fixture_summaries = []
+        
+        for fixture_class in fixture_classes:
+            if not issubclass(fixture_class, NotebookTestFixture):
+                raise ValueError(
+                    f"{fixture_class.__name__} must inherit from NotebookTestFixture"
+                )
+            
+            if self.verbose:
+                print(f"\n{'='*60}")
+                print(f"Running {fixture_class.__name__}")
+                print(f"{'='*60}\n")
+            
+            fixture = fixture_class()
+            results = fixture.execute_tests()
+            summary = fixture.get_results()
+            
+            fixture_summaries.append({
+                "fixture_name": fixture_class.__name__,
+                "summary": summary,
+            })
+            
+            all_results.extend(results)
+        
+        # Aggregate results
+        total = len(all_results)
+        passed = sum(1 for r in all_results if r.status == "passed")
+        failed = sum(1 for r in all_results if r.status == "failed")
+        errors = sum(1 for r in all_results if r.status == "error")
+        
+        aggregated = {
+            "total": total,
+            "passed": passed,
+            "failed": failed,
+            "errors": errors,
+            "fixtures": fixture_summaries,
+        }
+        
+        if self.verbose:
+            self._print_summary(aggregated)
+        
+        return aggregated
     
     def _run_all_fixtures(self) -> Dict[str, Any]:
         """Discover and run all test fixtures in the current notebook."""
@@ -152,14 +214,15 @@ class NotebookRunner:
         print(f"{'='*60}\n")
 
 
-def run_notebook_tests(test_fixture_class: Optional[type] = None, verbose: bool = True) -> Dict[str, Any]:
+def run_notebook_tests(test_fixture_class: Optional[Union[type, List[type]]] = None, verbose: bool = True) -> Dict[str, Any]:
     """
     Convenience function to run tests directly in a Databricks notebook.
     
     This is the simplest way to run tests interactively.
     
     Args:
-        test_fixture_class: Optional specific test fixture class to run.
+        test_fixture_class: Optional test fixture class(es) to run.
+                          Can be a single class, a list of classes, or None.
                           If None, discovers and runs all fixtures.
         verbose: Whether to print detailed output
     
@@ -173,8 +236,11 @@ def run_notebook_tests(test_fixture_class: Optional[type] = None, verbose: bool 
         # Run all tests
         run_notebook_tests()
         
-        # Or run a specific test class
+        # Run a specific test class
         run_notebook_tests(TestMyFeature)
+        
+        # Run multiple test classes
+        run_notebook_tests([TestMyFirstTest, TestMySecondTest])
     """
     runner = NotebookRunner(verbose=verbose)
     return runner.run(test_fixture_class)

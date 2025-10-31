@@ -147,14 +147,22 @@ class TestMyData(NotebookTestFixture):
     def test_count(self):
         assert self.df.count() == 1
 
-# Run tests
+# Run tests (automatically discovers all test classes)
 results = run_notebook_tests()
+
+# Or run specific test classes
+# results = run_notebook_tests(TestMyData)
+
+# Or run multiple test classes
+# results = run_notebook_tests([TestMyData, TestOtherData])
 
 # Return results to CLI (required for --remote execution)
 dbutils.notebook.exit(json.dumps(results))
 ```
 
 **📘 See [Notebook Usage Guide](docs/notebook_usage.md) for detailed examples and patterns.**
+
+**📘 See [Multiple Test Classes Guide](docs/multiple_test_classes.md) for running multiple test classes.**
 
 ## CLI Commands
 
