@@ -10,6 +10,7 @@ import time
 import traceback
 from typing import List, Dict, Any, Optional, Callable
 from abc import ABC
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 class TestResult:
@@ -142,9 +143,13 @@ class NotebookTestFixture(ABC):
                 error_traceback=traceback.format_exc(),
             )
     
-    def execute_tests(self) -> List[TestResult]:
+    def execute_tests(self, parallel: bool = False, max_workers: Optional[int] = None) -> List[TestResult]:
         """
         Execute all tests in the fixture.
+        
+        Args:
+            parallel: Whether to run tests in parallel (default: False)
+            max_workers: Maximum number of parallel workers (default: None = use CPU count)
         
         Returns:
             List of TestResult objects
@@ -159,10 +164,23 @@ class NotebookTestFixture(ABC):
         # Get and execute test methods
         test_methods = self._get_test_methods()
         
+        if parallel and len(test_methods) > 1:
+            self.results = self._execute_tests_parallel(test_methods, max_workers)
+        else:
+            self.results = self._execute_tests_sequential(test_methods)
+        
+        # Execute cleanup
+        self._execute_cleanup()
+        
+        return self.results
+    
+    def _execute_tests_sequential(self, test_methods: List[tuple]) -> List[TestResult]:
+        """Execute tests sequentially."""
+        results = []
         for test_name, test_method in test_methods:
             print(f"Running {test_name}...")
             result = self._execute_test(test_name, test_method)
-            self.results.append(result)
+            results.append(result)
             
             if result.status == "passed":
                 print(f"  ✓ PASSED")
@@ -171,10 +189,48 @@ class NotebookTestFixture(ABC):
             else:
                 print(f"  ✗ ERROR: {result.error_message}")
         
-        # Execute cleanup
-        self._execute_cleanup()
+        return results
+    
+    def _execute_tests_parallel(self, test_methods: List[tuple], max_workers: Optional[int] = None) -> List[TestResult]:
+        """Execute tests in parallel using ThreadPoolExecutor."""
+        results = []
         
-        return self.results
+        print(f"Running {len(test_methods)} tests in parallel (max_workers={max_workers or 'auto'})...")
+        
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all tests
+            future_to_test = {
+                executor.submit(self._execute_test, test_name, test_method): test_name
+                for test_name, test_method in test_methods
+            }
+            
+            # Collect results as they complete
+            for future in as_completed(future_to_test):
+                test_name = future_to_test[future]
+                try:
+                    result = future.result()
+                    results.append(result)
+                    
+                    if result.status == "passed":
+                        print(f"  ✓ {test_name} PASSED")
+                    elif result.status == "failed":
+                        print(f"  ✗ {test_name} FAILED: {result.error_message}")
+                    else:
+                        print(f"  ✗ {test_name} ERROR: {result.error_message}")
+                except Exception as e:
+                    print(f"  ✗ {test_name} FAILED TO EXECUTE: {e}")
+                    results.append(TestResult(
+                        test_name=test_name,
+                        status="error",
+                        duration=0.0,
+                        error_message=f"Failed to execute: {str(e)}",
+                        error_traceback=traceback.format_exc(),
+                    ))
+        
+        # Sort results by test name to maintain consistent ordering
+        results.sort(key=lambda r: r.test_name)
+        
+        return results
     
     def get_results(self) -> Dict[str, Any]:
         """

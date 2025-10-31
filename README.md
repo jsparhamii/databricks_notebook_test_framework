@@ -6,12 +6,13 @@ A Python-based automated testing framework for Databricks notebooks.
 
 - ✅ Simple, intuitive test pattern with setup/test/cleanup lifecycle
 - ✅ Execute unit tests in notebooks locally *and* remotely in Databricks
+- ✅ **Parallel test execution** for faster test runs
 - ✅ Clean developer workflow for writing tests
 - ✅ JUnit XML results compatible with CI/CD pipelines
 - ✅ Parameterized testing support
 - ✅ Test discovery and orchestration for multiple notebooks
 - ✅ CLI-driven with rich output
-- ✅ Parallel test execution (optional)
+- ✅ Run multiple test classes in a single notebook
 - ✅ Zero external test framework dependencies
 
 ## Installation
@@ -156,6 +157,9 @@ results = run_notebook_tests()
 # Or run multiple test classes
 # results = run_notebook_tests([TestMyData, TestOtherData])
 
+# Or run tests in parallel for faster execution
+# results = run_notebook_tests(parallel=True, max_workers=4)
+
 # Return results to CLI (required for --remote execution)
 dbutils.notebook.exit(json.dumps(results))
 ```
@@ -163,6 +167,8 @@ dbutils.notebook.exit(json.dumps(results))
 **📘 See [Notebook Usage Guide](docs/notebook_usage.md) for detailed examples and patterns.**
 
 **📘 See [Multiple Test Classes Guide](docs/multiple_test_classes.md) for running multiple test classes.**
+
+**📘 See [Parallel Execution Guide](docs/parallel_execution.md) for faster test execution.**
 
 ## CLI Commands
 

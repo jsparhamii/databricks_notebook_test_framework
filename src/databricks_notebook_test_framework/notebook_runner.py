@@ -22,14 +22,18 @@ class NotebookRunner:
     This provides a convenient way to run tests interactively during development.
     """
     
-    def __init__(self, verbose: bool = True):
+    def __init__(self, verbose: bool = True, parallel: bool = False, max_workers: Optional[int] = None):
         """
         Initialize the notebook runner.
         
         Args:
             verbose: Whether to print detailed output
+            parallel: Whether to run tests in parallel
+            max_workers: Maximum number of parallel workers (None = use CPU count)
         """
         self.verbose = verbose
+        self.parallel = parallel
+        self.max_workers = max_workers
     
     def run(self, test_fixture_class: Optional[Union[type, List[type]]] = None) -> Dict[str, Any]:
         """
@@ -53,6 +57,10 @@ class NotebookRunner:
             
             # Run multiple test classes
             results = runner.run([TestMyFirstTest, TestMySecondTest])
+            
+            # Run tests in parallel
+            runner = NotebookRunner(parallel=True, max_workers=4)
+            results = runner.run()
         """
         if test_fixture_class is None:
             return self._run_all_fixtures()
@@ -71,10 +79,12 @@ class NotebookRunner:
         if self.verbose:
             print(f"\n{'='*60}")
             print(f"Running {fixture_class.__name__}")
+            if self.parallel:
+                print(f"Parallel execution enabled (max_workers={self.max_workers or 'auto'})")
             print(f"{'='*60}\n")
         
         fixture = fixture_class()
-        results = fixture.execute_tests()
+        results = fixture.execute_tests(parallel=self.parallel, max_workers=self.max_workers)
         summary = fixture.get_results()
         
         if self.verbose:
@@ -106,10 +116,12 @@ class NotebookRunner:
             if self.verbose:
                 print(f"\n{'='*60}")
                 print(f"Running {fixture_class.__name__}")
+                if self.parallel:
+                    print(f"Parallel execution enabled (max_workers={self.max_workers or 'auto'})")
                 print(f"{'='*60}\n")
             
             fixture = fixture_class()
-            results = fixture.execute_tests()
+            results = fixture.execute_tests(parallel=self.parallel, max_workers=self.max_workers)
             summary = fixture.get_results()
             
             fixture_summaries.append({
@@ -164,10 +176,12 @@ class NotebookRunner:
             if self.verbose:
                 print(f"\n{'='*60}")
                 print(f"Running {fixture_class.__name__}")
+                if self.parallel:
+                    print(f"Parallel execution enabled (max_workers={self.max_workers or 'auto'})")
                 print(f"{'='*60}\n")
             
             fixture = fixture_class()
-            results = fixture.execute_tests()
+            results = fixture.execute_tests(parallel=self.parallel, max_workers=self.max_workers)
             summary = fixture.get_results()
             
             fixture_summaries.append({
@@ -214,7 +228,12 @@ class NotebookRunner:
         print(f"{'='*60}\n")
 
 
-def run_notebook_tests(test_fixture_class: Optional[Union[type, List[type]]] = None, verbose: bool = True) -> Dict[str, Any]:
+def run_notebook_tests(
+    test_fixture_class: Optional[Union[type, List[type]]] = None,
+    verbose: bool = True,
+    parallel: bool = False,
+    max_workers: Optional[int] = None
+) -> Dict[str, Any]:
     """
     Convenience function to run tests directly in a Databricks notebook.
     
@@ -225,6 +244,8 @@ def run_notebook_tests(test_fixture_class: Optional[Union[type, List[type]]] = N
                           Can be a single class, a list of classes, or None.
                           If None, discovers and runs all fixtures.
         verbose: Whether to print detailed output
+        parallel: Whether to run tests in parallel (default: False)
+        max_workers: Maximum number of parallel workers (None = use CPU count)
     
     Returns:
         Dictionary with test results
@@ -241,8 +262,11 @@ def run_notebook_tests(test_fixture_class: Optional[Union[type, List[type]]] = N
         
         # Run multiple test classes
         run_notebook_tests([TestMyFirstTest, TestMySecondTest])
+        
+        # Run tests in parallel
+        run_notebook_tests(parallel=True, max_workers=4)
     """
-    runner = NotebookRunner(verbose=verbose)
+    runner = NotebookRunner(verbose=verbose, parallel=parallel, max_workers=max_workers)
     return runner.run(test_fixture_class)
 
 
