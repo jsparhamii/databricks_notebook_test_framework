@@ -61,71 +61,6 @@ class DatabricksHelper:
         except Exception:
             return False
     
-    def create_job(
-        self,
-        name: str,
-        notebook_path: str,
-        cluster_spec: Optional[Dict[str, Any]] = None,
-        cluster_id: Optional[str] = None,
-        use_serverless: bool = False,
-        parameters: Optional[Dict[str, str]] = None,
-        timeout_seconds: int = 600,
-    ) -> str:
-        """
-        Create a one-time job to run a notebook.
-        
-        Args:
-            name: Job name
-            notebook_path: Path to notebook
-            cluster_spec: New cluster spec (for new cluster)
-            cluster_id: Existing cluster ID (for existing cluster)
-            use_serverless: Use serverless compute
-            parameters: Notebook parameters
-            timeout_seconds: Timeout
-        
-        Returns:
-            Job ID string
-        """
-        from databricks.sdk.service.jobs import (
-            Task,
-            NotebookTask,
-            Source,
-        )
-        
-        task_config = {
-            "task_key": "test_task",
-            "notebook_task": NotebookTask(
-                notebook_path=notebook_path,
-                source=Source.WORKSPACE,
-                base_parameters=parameters or {},
-            ),
-            "timeout_seconds": timeout_seconds,
-        }
-        
-        # Determine compute configuration
-        if cluster_id:
-            # Use existing cluster
-            task_config["existing_cluster_id"] = cluster_id
-        elif use_serverless:
-            # Use serverless compute (no cluster config needed for serverless)
-            # Serverless is the default if no cluster is specified
-            pass
-        elif cluster_spec:
-            # Create new cluster
-            task_config["new_cluster"] = cluster_spec
-        else:
-            # Default to serverless if nothing specified
-            pass
-        
-        task = Task(**task_config)
-        
-        job = self.client.jobs.create(
-            name=name,
-            tasks=[task],
-        )
-        
-        return str(job.job_id)
-    
     def run_notebook(
         self,
         notebook_path: str,
@@ -274,20 +209,6 @@ class DatabricksHelper:
         except Exception as e:
             print(f"Warning: Could not fetch run output: {e}")
             return None
-    
-    def cancel_run(self, run_id: str) -> None:
-        """Cancel a running job."""
-        try:
-            self.client.jobs.cancel_run(run_id=int(run_id))
-        except Exception as e:
-            print(f"Warning: Could not cancel run {run_id}: {e}")
-    
-    def delete_job(self, job_id: str) -> None:
-        """Delete a job."""
-        try:
-            self.client.jobs.delete(job_id=int(job_id))
-        except Exception as e:
-            print(f"Warning: Could not delete job {job_id}: {e}")
     
     def list_notebooks(self, workspace_path: str, pattern: str = None) -> List[str]:
         """
