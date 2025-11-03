@@ -6,6 +6,10 @@ workspace:
   profile: "adb"
 
 cluster:
+  library:
+    - name: "dbx_test"
+      version: "0.1.0"
+      repo: "https://github.com/jsparhamii/dbx_test.git"
   # Use serverless compute (default)
   # Or uncomment to use an existing cluster:
   # cluster_id: "your-cluster-id"

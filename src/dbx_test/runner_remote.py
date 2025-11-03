@@ -10,8 +10,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 
-from databricks_notebook_test_framework.config import TestConfig
-from databricks_notebook_test_framework.utils.databricks import DatabricksHelper
+from dbx_test.config import TestConfig
+from dbx_test.utils.databricks import DatabricksHelper
 
 
 class RemoteTestRunner:
@@ -32,88 +32,6 @@ class RemoteTestRunner:
         # Initialize Databricks client using workspace auth config
         auth_config = config.workspace.get_auth_config()
         self.db_helper = DatabricksHelper(**auth_config)
-        
-        # Track uploaded wheel for cleanup
-        self.uploaded_wheel_path = None
-    
-    def build_and_upload_wheel(self, workspace_dir: str) -> Optional[str]:
-        """
-        Build the framework wheel and upload it to workspace.
-        
-        Args:
-            workspace_dir: Workspace directory for upload
-        
-        Returns:
-            Workspace path to uploaded wheel, or None if failed
-        """
-        import subprocess
-        import os
-        from pathlib import Path
-        
-        try:
-            # Find project root (where pyproject.toml is)
-            current_file = Path(__file__).resolve()
-            project_root = current_file.parent.parent.parent.parent
-            
-            if not (project_root / "pyproject.toml").exists():
-                if self.verbose:
-                    self.console.print("[yellow]Warning: Could not find pyproject.toml, skipping wheel upload[/yellow]")
-                return None
-            
-            # Build wheel
-            if self.verbose:
-                self.console.print("[dim]Building framework wheel...[/dim]")
-            
-            dist_dir = project_root / "dist"
-            subprocess.run(
-                ["python", "-m", "build", "--wheel", "--outdir", str(dist_dir)],
-                cwd=project_root,
-                check=True,
-                capture_output=not self.verbose,
-            )
-            
-            # Find the most recent wheel
-            wheel_files = list(dist_dir.glob("databricks_notebook_test_framework-*.whl"))
-            if not wheel_files:
-                if self.verbose:
-                    self.console.print("[yellow]Warning: No wheel file found after build[/yellow]")
-                return None
-            
-            # Get the most recent wheel
-            wheel_file = max(wheel_files, key=lambda p: p.stat().st_mtime)
-            
-            # Upload to workspace
-            workspace_wheel_path = f"{workspace_dir}/{wheel_file.name}"
-            
-            if self.verbose:
-                self.console.print(f"[dim]Uploading wheel to {workspace_wheel_path}...[/dim]")
-            
-            self.db_helper.upload_file_to_workspace(
-                str(wheel_file),
-                workspace_wheel_path
-            )
-            
-            if self.verbose:
-                self.console.print(f"[green]✓ Wheel uploaded successfully[/green]")
-            
-            self.uploaded_wheel_path = workspace_wheel_path
-            return workspace_wheel_path
-            
-        except Exception as e:
-            if self.verbose:
-                self.console.print(f"[yellow]Warning: Could not build/upload wheel: {e}[/yellow]")
-            return None
-    
-    def cleanup_wheel(self) -> None:
-        """Clean up uploaded wheel from workspace."""
-        if self.uploaded_wheel_path:
-            try:
-                self.db_helper.delete_workspace_file(self.uploaded_wheel_path)
-                if self.verbose:
-                    self.console.print(f"[dim]Cleaned up wheel: {self.uploaded_wheel_path}[/dim]")
-            except Exception as e:
-                if self.verbose:
-                    self.console.print(f"[dim]Could not clean up wheel: {e}[/dim]")
     
     def run_test(
         self,
@@ -435,16 +353,7 @@ class RemoteTestRunner:
         """
         all_results = []
         
-        # Build and upload wheel for framework installation
-        wheel_path = self.build_and_upload_wheel(workspace_path)
-        
-        # Prepare library spec if wheel was uploaded
-        libraries = None
-        if wheel_path:
-            libraries = [{"whl": wheel_path}]
-        
-        try:
-            with Progress(
+        with Progress(
                 SpinnerColumn(),
                 TextColumn("[progress.description]{task.description}"),
                 BarColumn(),
@@ -475,7 +384,6 @@ class RemoteTestRunner:
                             use_serverless=use_serverless,
                             parameters=self.config.parameters,
                             timeout=self.config.execution.timeout,
-                            libraries=libraries,
                         )
                         
                         # Wait for completion
@@ -541,9 +449,6 @@ class RemoteTestRunner:
                         })
                     
                     progress.advance(task)
-        finally:
-            # Clean up uploaded wheel
-            self.cleanup_wheel()
         
         return all_results
     

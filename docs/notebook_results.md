@@ -10,7 +10,7 @@ Your test notebooks should call `run_notebook_tests()` and return the results:
 
 ```python
 # Databricks notebook source
-from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+from dbx_test import NotebookTestFixture, run_notebook_tests
 import json
 
 class TestExample(NotebookTestFixture):
@@ -82,7 +82,7 @@ The `run_notebook_tests()` function returns a dictionary like:
 
 # COMMAND ----------
 
-from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+from dbx_test import NotebookTestFixture, run_notebook_tests
 import json
 
 # COMMAND ----------
@@ -191,7 +191,7 @@ except:
 
 When you run:
 ```bash
-dbx-test run --remote --workspace-tests --profile adb \
+dbx_test run --remote --workspace-tests --profile adb \
   --tests-dir "/Workspace/Users/your.name@databricks.com/tests" \
   --pattern "test_*"
 ```

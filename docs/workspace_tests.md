@@ -10,7 +10,7 @@ You can now run tests that are already in your Databricks workspace without uplo
 ## Command
 
 ```bash
-dbx-test run --remote --workspace-tests --profile <profile> --tests-dir "<workspace_path>"
+dbx_test run --remote --workspace-tests --profile <profile> --tests-dir "<workspace_path>"
 ```
 
 ### Parameters
@@ -27,7 +27,7 @@ dbx-test run --remote --workspace-tests --profile <profile> --tests-dir "<worksp
 ### Example 1: Run All Tests in a Workspace Directory
 
 ```bash
-dbx-test run --remote --workspace-tests \
+dbx_test run --remote --workspace-tests \
   --profile adb \
   --tests-dir "/Workspace/Users/james.parham@databricks.com/dbx_test" \
   --verbose
@@ -36,7 +36,7 @@ dbx-test run --remote --workspace-tests \
 ### Example 2: Run Tests with Custom Pattern
 
 ```bash
-dbx-test run --remote --workspace-tests \
+dbx_test run --remote --workspace-tests \
   --profile prod \
   --tests-dir "/Workspace/Repos/my-repo/tests" \
   --pattern "*integration*" \
@@ -46,7 +46,7 @@ dbx-test run --remote --workspace-tests \
 ### Example 3: Run Tests in a Repos Folder
 
 ```bash
-dbx-test run --remote --workspace-tests \
+dbx_test run --remote --workspace-tests \
   --profile dev \
   --tests-dir "/Repos/Staging/my-project/tests"
 ```
@@ -74,7 +74,7 @@ In your Databricks workspace at `/Workspace/Users/james.parham@databricks.com/db
 
 ```python
 # Notebook: my_feature_test
-from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+from dbx_test import NotebookTestFixture, run_notebook_tests
 
 class TestMyFeature(NotebookTestFixture):
     def run_setup(self):
@@ -90,7 +90,7 @@ run_notebook_tests()
 ### Step 2: Run from Command Line
 
 ```bash
-dbx-test run --remote --workspace-tests \
+dbx_test run --remote --workspace-tests \
   --profile adb \
   --tests-dir "/Workspace/Users/james.parham@databricks.com/dbx_test" \
   --verbose
@@ -101,7 +101,7 @@ dbx-test run --remote --workspace-tests \
 The framework will:
 - Discover your test notebooks
 - Execute them on Databricks
-- Generate JUnit XML reports in `.dbx-test-results/`
+- Generate JUnit XML reports in `.dbx_test-results/`
 - Display results in console
 
 ## Troubleshooting
@@ -165,7 +165,7 @@ paths:
   test_pattern: "**/*_test.py"
 
 reporting:
-  output_dir: ".dbx-test-results"
+  output_dir: ".dbx_test-results"
   formats:
     - "console"
     - "junit"
@@ -201,7 +201,7 @@ jobs:
           python-version: '3.10'
       
       - name: Install framework
-        run: pip install databricks-notebook-test-framework
+        run: pip install dbx_test
       
       - name: Configure Databricks CLI
         run: |
@@ -212,7 +212,7 @@ jobs:
       
       - name: Run workspace tests
         run: |
-          dbx-test run --remote --workspace-tests \
+          dbx_test run --remote --workspace-tests \
             --profile DEFAULT \
             --tests-dir "/Workspace/Repos/my-repo/tests"
 ```
@@ -235,6 +235,6 @@ The `--workspace-tests` flag enables you to:
 
 **Command to remember:**
 ```bash
-dbx-test run --remote --workspace-tests --profile <profile> --tests-dir "<workspace_path>"
+dbx_test run --remote --workspace-tests --profile <profile> --tests-dir "<workspace_path>"
 ```
 

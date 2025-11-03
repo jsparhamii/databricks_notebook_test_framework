@@ -8,13 +8,13 @@ __version__ = "0.1.0"
 __author__ = "Your Name"
 __license__ = "MIT"
 
-from databricks_notebook_test_framework.config import TestConfig
-from databricks_notebook_test_framework.discovery import TestDiscovery
-from databricks_notebook_test_framework.runner_local import LocalTestRunner
-from databricks_notebook_test_framework.runner_remote import RemoteTestRunner
-from databricks_notebook_test_framework.reporting import TestReporter
-from databricks_notebook_test_framework.testing import NotebookTestFixture, run_tests
-from databricks_notebook_test_framework.notebook_runner import (
+from dbx_test.config import TestConfig
+from dbx_test.discovery import TestDiscovery
+from dbx_test.runner_local import LocalTestRunner
+from dbx_test.runner_remote import RemoteTestRunner
+from dbx_test.reporting import TestReporter
+from dbx_test.testing import NotebookTestFixture, run_tests
+from dbx_test.notebook_runner import (
     NotebookRunner,
     run_notebook_tests,
     quick_test,

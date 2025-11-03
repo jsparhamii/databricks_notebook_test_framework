@@ -202,7 +202,7 @@ execution:
 
 Run:
 ```bash
-dbx-test run --remote --config config/test_config_dev.yml
+dbx_test run --remote --config config/test_config_dev.yml
 ```
 
 ### Example 2: CI/CD Pipeline (Serverless)
@@ -224,7 +224,7 @@ In CI:
 ```bash
 export DATABRICKS_HOST=$DATABRICKS_HOST
 export DATABRICKS_TOKEN=$DATABRICKS_TOKEN
-dbx-test run --remote --config config/test_config_ci.yml
+dbx_test run --remote --config config/test_config_ci.yml
 ```
 
 ### Example 3: Production Validation
@@ -266,12 +266,12 @@ Run with:
 # Dev
 export ENV_PROFILE="dev"
 export CLUSTER_ID="1234-dev-cluster"
-dbx-test run --remote
+dbx_test run --remote
 
 # Prod
 export ENV_PROFILE="prod"
 export CLUSTER_ID="5678-prod-cluster"
-dbx-test run --remote
+dbx_test run --remote
 ```
 
 ## Cost Optimization

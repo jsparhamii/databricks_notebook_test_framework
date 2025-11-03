@@ -25,7 +25,7 @@ The framework now supports running test methods within a test class in parallel 
 ### Basic Usage
 
 ```python
-from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+from dbx_test import NotebookTestFixture, run_notebook_tests
 import json
 
 class TestMyData(NotebookTestFixture):
@@ -223,7 +223,7 @@ results = run_notebook_tests(TestDataQuality, parallel=True, max_workers=5)
 ### Example 3: Using NotebookRunner Directly
 
 ```python
-from databricks_notebook_test_framework import NotebookRunner
+from dbx_test import NotebookRunner
 
 # Create runner with parallel enabled
 runner = NotebookRunner(

@@ -248,7 +248,7 @@ from pathlib import Path
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from databricks_notebook_test_framework import NotebookTestFixture
+from dbx_test import NotebookTestFixture
 from data_processing.transformations import (
     clean_customer_data,
     calculate_customer_lifetime_value,
@@ -391,7 +391,7 @@ from pathlib import Path
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from databricks_notebook_test_framework import NotebookTestFixture
+from dbx_test import NotebookTestFixture
 from data_processing.validators import (
     validate_schema,
     validate_no_nulls,
@@ -490,7 +490,7 @@ from pathlib import Path
 src_path = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from databricks_notebook_test_framework import NotebookTestFixture
+from dbx_test import NotebookTestFixture
 from data_processing.aggregations import (
     daily_sales_summary,
     top_customers_by_revenue,
@@ -615,13 +615,13 @@ class TestCalculateRunningTotal(NotebookTestFixture):
 
 ```bash
 # Run all tests
-dbx-test run --local --tests-dir tests
+dbx_test run --local --tests-dir tests
 
 # Run specific test file
-dbx-test run --local --pattern "*test_transformations*"
+dbx_test run --local --pattern "*test_transformations*"
 
 # Run remotely on Databricks
-dbx-test run --remote --tests-dir tests --profile dev
+dbx_test run --remote --tests-dir tests --profile dev
 ```
 
 ### Option B: In Databricks Notebook
@@ -638,13 +638,13 @@ src_path = "/Workspace/Repos/my-repo/my_databricks_project/src"
 sys.path.insert(0, src_path)
 
 # Cell 2: Install framework
-%pip install /dbfs/FileStore/wheels/databricks_notebook_test_framework-0.1.0-py3-none-any.whl
+%pip install /dbfs/FileStore/wheels/dbx_test-0.1.0-py3-none-any.whl
 
 # Cell 3: Import your code
 from data_processing.transformations import clean_customer_data
 
 # Cell 4: Write and run tests
-from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+from dbx_test import NotebookTestFixture, run_notebook_tests
 
 class TestTransformations(NotebookTestFixture):
     def run_setup(self):
@@ -679,7 +679,7 @@ include = ["data_processing*", "utils*"]
 ## Expected Output
 
 ```bash
-$ dbx-test run --local --tests-dir tests
+$ dbx_test run --local --tests-dir tests
 
 Discovered 3 test notebook(s):
   - tests/test_transformations.py (3 classes, 10 tests)
@@ -761,7 +761,7 @@ setup_src_path()
 
 ```python
 # tests/fixtures.py
-from databricks_notebook_test_framework import NotebookTestFixture
+from dbx_test import NotebookTestFixture
 
 class BaseTestWithSpark(NotebookTestFixture):
     """Base test class with common setup."""

@@ -25,7 +25,7 @@ pip install -e .
 Or from PyPI (once published):
 
 ```bash
-pip install databricks-notebook-test-framework
+pip install dbx_test
 ```
 
 ## Quick Start
@@ -35,7 +35,7 @@ pip install databricks-notebook-test-framework
 Create a test notebook (e.g., `tests/my_notebook_test.py`):
 
 ```python
-from databricks_notebook_test_framework import NotebookTestFixture
+from dbx_test import NotebookTestFixture
 
 class TestMyNotebook(NotebookTestFixture):
     def run_setup(self):
@@ -99,7 +99,7 @@ paths:
   test_pattern: "**/*_test.py"
   
 reporting:
-  output_dir: ".dbx-test-results"
+  output_dir: ".dbx_test-results"
   formats: ["junit", "console", "json"]
 ```
 
@@ -109,21 +109,21 @@ reporting:
 
 ```bash
 # Discover and run all tests locally (pytest-style: test_* and *_test)
-dbx-test run --local --tests-dir tests
+dbx_test run --local --tests-dir tests
 
 # Run remotely on Databricks
-dbx-test run --remote --tests-dir /Workspace/Users/user@email.com/project/tests
+dbx_test run --remote --tests-dir /Workspace/Users/user@email.com/project/tests
 
 # Use specific Databricks CLI profile
-dbx-test run --remote --profile prod \
+dbx_test run --remote --profile prod \
   --tests-dir /Workspace/Users/user@email.com/project/tests
 
 # Run tests already in workspace (no upload)
-dbx-test run --remote --workspace-tests \
+dbx_test run --remote --workspace-tests \
   --tests-dir /Workspace/Users/user@email.com/project/tests
 
 # Multiple output formats
-dbx-test run --remote \
+dbx_test run --remote \
   --tests-dir /Workspace/Users/user@email.com/project/tests \
   --output-format console \
   --output-format junit \
@@ -138,7 +138,7 @@ dbx-test run --remote \
 # The framework is automatically installed when running remote tests
 # For interactive notebook development:
 
-from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+from dbx_test import NotebookTestFixture, run_notebook_tests
 import json
 
 class TestMyData(NotebookTestFixture):
@@ -172,7 +172,7 @@ dbutils.notebook.exit(json.dumps(results))
 
 ## CLI Commands
 
-### `dbx-test run`
+### `dbx_test run`
 
 Execute tests locally or remotely.
 
@@ -197,53 +197,53 @@ Execute tests locally or remotely.
 
 ```bash
 # Local testing
-dbx-test run --local --tests-dir tests
+dbx_test run --local --tests-dir tests
 
 # Remote testing
-dbx-test run --remote --tests-dir /Workspace/Users/user@email.com/project/tests
+dbx_test run --remote --tests-dir /Workspace/Users/user@email.com/project/tests
 
 # With profile and multiple formats
-dbx-test run --remote --profile prod \
+dbx_test run --remote --profile prod \
   --tests-dir /Workspace/Users/user@email.com/project/tests \
   --output-format junit \
   --output-format html
 
 # Workspace tests (already in Databricks)
-dbx-test run --remote --workspace-tests \
+dbx_test run --remote --workspace-tests \
   --tests-dir /Workspace/Users/user@email.com/project/tests \
   --verbose
 ```
 
-### `dbx-test discover`
+### `dbx_test discover`
 
 Discover all test notebooks in the repository.
 
 ```bash
 # Discover tests in local directory
-dbx-test discover --tests-dir tests
+dbx_test discover --tests-dir tests
 
 # With verbose output
-dbx-test discover --tests-dir tests --verbose
+dbx_test discover --tests-dir tests --verbose
 ```
 
-### `dbx-test upload`
+### `dbx_test upload`
 
 Upload test notebooks to Databricks workspace.
 
 ```bash
 # Upload local tests to workspace
-dbx-test upload --tests-dir tests \
+dbx_test upload --tests-dir tests \
   --workspace-path /Workspace/Users/user@email.com/project/tests \
   --profile dev
 ```
 
-### `dbx-test scaffold`
+### `dbx_test scaffold`
 
 Create a new test notebook from template.
 
 ```bash
 # Create a new test
-dbx-test scaffold my_feature_test
+dbx_test scaffold my_feature_test
 ```
 
 ## Configuration
@@ -269,7 +269,7 @@ See [Configuration Guide](docs/configuration.md) for detailed configuration opti
 ## Architecture
 
 ```
-src/databricks_notebook_test_framework/
+src/dbx_test/
 ├── cli.py                 # CLI entry point
 ├── config.py              # Configuration management
 ├── discovery.py           # Test discovery engine

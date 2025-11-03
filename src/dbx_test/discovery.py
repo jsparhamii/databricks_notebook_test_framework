@@ -8,8 +8,8 @@ import fnmatch
 from rich.console import Console
 from rich.table import Table
 
-from databricks_notebook_test_framework.utils.notebook import NotebookParser
-from databricks_notebook_test_framework.utils.validation import validate_directory_exists
+from dbx_test.utils.notebook import NotebookParser
+from dbx_test.utils.validation import validate_directory_exists
 
 
 class TestDiscovery:

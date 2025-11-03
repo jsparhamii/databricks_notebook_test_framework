@@ -15,28 +15,28 @@ First, upload the wheel file to DBFS:
 
 ```bash
 # From your local machine
-databricks fs cp dist/databricks_notebook_test_framework-0.1.0-py3-none-any.whl \
+databricks fs cp dist/dbx_test-0.1.0-py3-none-any.whl \
   dbfs:/FileStore/wheels/
 ```
 
 Then in your Databricks notebook:
 
 ```python
-%pip install /dbfs/FileStore/wheels/databricks_notebook_test_framework-0.1.0-py3-none-any.whl
+%pip install /dbfs/FileStore/wheels/dbx_test-0.1.0-py3-none-any.whl
 ```
 
 ### Option 2: Install from PyPI
 
 ```python
-%pip install databricks-notebook-test-framework
+%pip install dbx_test
 ```
 
 ### Option 3: Using the Helper Function
 
 ```python
-from databricks_notebook_test_framework import install_notebook_package
+from dbx_test import install_notebook_package
 
-install_notebook_package("/dbfs/FileStore/wheels/databricks_notebook_test_framework-0.1.0-py3-none-any.whl")
+install_notebook_package("/dbfs/FileStore/wheels/dbx_test-0.1.0-py3-none-any.whl")
 ```
 
 ## Basic Usage
@@ -44,7 +44,7 @@ install_notebook_package("/dbfs/FileStore/wheels/databricks_notebook_test_framew
 ### Method 1: Simple One-Liner (Recommended)
 
 ```python
-from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+from dbx_test import NotebookTestFixture, run_notebook_tests
 
 # Define your test class
 class TestMyFeature(NotebookTestFixture):
@@ -64,7 +64,7 @@ run_notebook_tests()
 ### Method 2: Run Specific Test Class
 
 ```python
-from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+from dbx_test import NotebookTestFixture, run_notebook_tests
 
 class TestFeatureA(NotebookTestFixture):
     def test_something(self):
@@ -84,7 +84,7 @@ run_notebook_tests()
 ### Method 3: Using NotebookRunner for More Control
 
 ```python
-from databricks_notebook_test_framework import NotebookTestFixture, NotebookRunner
+from dbx_test import NotebookTestFixture, NotebookRunner
 
 class TestMyFeature(NotebookTestFixture):
     def test_something(self):
@@ -106,7 +106,7 @@ print(f"Passed: {results['passed']}/{results['total']}")
 ### Method 4: Quick Test (Returns True/False)
 
 ```python
-from databricks_notebook_test_framework import NotebookTestFixture, quick_test
+from dbx_test import NotebookTestFixture, quick_test
 
 class TestQuick(NotebookTestFixture):
     def test_something(self):
@@ -122,7 +122,7 @@ assert passed, "Tests failed!"
 ### Example 1: Data Validation Test
 
 ```python
-from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+from dbx_test import NotebookTestFixture, run_notebook_tests
 
 class TestDataQuality(NotebookTestFixture):
     """Test data quality checks for customer data."""
@@ -178,7 +178,7 @@ run_notebook_tests()
 ### Example 2: ETL Pipeline Test
 
 ```python
-from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+from dbx_test import NotebookTestFixture, run_notebook_tests
 
 class TestETLPipeline(NotebookTestFixture):
     """Test the ETL transformation pipeline."""
@@ -249,7 +249,7 @@ else:
 ### Example 3: Multiple Test Classes
 
 ```python
-from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+from dbx_test import NotebookTestFixture, run_notebook_tests
 
 class TestSchemaValidation(NotebookTestFixture):
     """Test schema requirements."""
@@ -353,7 +353,7 @@ Create a test cell at the bottom of your notebook:
 
 ```python
 # CELL: Run Tests
-from databricks_notebook_test_framework import run_notebook_tests
+from dbx_test import run_notebook_tests
 
 if __name__ == "__main__":
     run_notebook_tests()
@@ -374,7 +374,7 @@ else:
 ### 4. Integration with Notebook Workflow
 
 ```python
-from databricks_notebook_test_framework import run_notebook_tests
+from dbx_test import run_notebook_tests
 
 # Run your main notebook code
 main_result = run_etl_pipeline()
@@ -394,7 +394,7 @@ dbutils.notebook.exit(str(results))
 ### 5. Debugging Failed Tests
 
 ```python
-from databricks_notebook_test_framework import NotebookRunner
+from dbx_test import NotebookRunner
 
 runner = NotebookRunner(verbose=True)
 results = runner.run()
@@ -409,7 +409,7 @@ for fixture in results.get('fixtures', []):
 
 ## Comparison: CLI vs Notebook
 
-| Feature | CLI (`dbx-test`) | Notebook (`run_notebook_tests`) |
+| Feature | CLI (`dbx_test`) | Notebook (`run_notebook_tests`) |
 |---------|-----------------|--------------------------------|
 | **Use Case** | CI/CD, automated testing | Interactive development |
 | **Setup** | Config file | In-notebook code |
@@ -448,7 +448,7 @@ for fixture in results.get('fixtures', []):
 Make sure your class inherits from `NotebookTestFixture`:
 
 ```python
-from databricks_notebook_test_framework import NotebookTestFixture
+from dbx_test import NotebookTestFixture
 
 class TestMyFeature(NotebookTestFixture):  # Must inherit!
     def test_something(self):
@@ -460,7 +460,7 @@ class TestMyFeature(NotebookTestFixture):  # Must inherit!
 Reinstall the package in the notebook:
 
 ```python
-%pip install --force-reinstall /dbfs/FileStore/wheels/databricks_notebook_test_framework-0.1.0-py3-none-any.whl
+%pip install --force-reinstall /dbfs/FileStore/wheels/dbx_test-0.1.0-py3-none-any.whl
 dbutils.library.restartPython()
 ```
 

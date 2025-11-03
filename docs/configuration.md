@@ -128,7 +128,7 @@ paths:
 ```yaml
 reporting:
   # Output directory for test results
-  output_dir: ".dbx-test-results"
+  output_dir: ".dbx_test-results"
   
   # Report formats to generate
   formats:
@@ -167,7 +167,7 @@ config/
 
 Use with:
 ```bash
-dbx-test run --remote --config config/test_config_prod.yml
+dbx_test run --remote --config config/test_config_prod.yml
 ```
 
 ## Configuration Overrides
@@ -178,13 +178,13 @@ Some settings can be overridden via CLI:
 
 ```bash
 # Override parallel execution
-dbx-test run --remote --parallel
+dbx_test run --remote --parallel
 
 # Override test pattern
-dbx-test run --local --pattern "*integration*"
+dbx_test run --local --pattern "*integration*"
 
 # Override verbose mode
-dbx-test run --remote --verbose
+dbx_test run --remote --verbose
 ```
 
 ### Environment Variables

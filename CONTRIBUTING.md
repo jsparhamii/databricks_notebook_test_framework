@@ -8,8 +8,8 @@ Thank you for your interest in contributing! This document provides guidelines f
 
 ```bash
 # Fork the repository on GitHub, then:
-git clone https://github.com/yourusername/databricks-notebook-test-framework.git
-cd databricks-notebook-test-framework
+git clone https://github.com/yourusername/dbx_test.git
+cd dbx_test
 ```
 
 ### 2. Set Up Development Environment
@@ -59,7 +59,7 @@ mypy src/
 ### Project Structure
 
 ```
-src/databricks_notebook_test_framework/
+src/dbx_test/
 ├── __init__.py           # Package initialization
 ├── cli.py                # CLI implementation
 ├── config.py             # Configuration management
@@ -78,10 +78,10 @@ src/databricks_notebook_test_framework/
 
 ```bash
 # Run local tests
-dbx-test run --local --tests-dir tests
+dbx_test run --local --tests-dir tests
 
 # Run specific test
-dbx-test run --local --pattern "*example*"
+dbx_test run --local --pattern "*example*"
 ```
 
 ### Documentation
@@ -221,7 +221,7 @@ Closes #XX
 2. **Implementation**
    ```python
    # Add your code with proper structure
-   # src/databricks_notebook_test_framework/new_feature.py
+   # src/dbx_test/new_feature.py
    
    class NewFeature:
        """Clear docstring explaining the feature."""

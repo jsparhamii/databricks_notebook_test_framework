@@ -33,7 +33,7 @@ Welcome to the comprehensive documentation for the Databricks Notebook Test Fram
 ### Global Options
 
 ```bash
-dbx-test [OPTIONS] COMMAND [ARGS]...
+dbx_test [OPTIONS] COMMAND [ARGS]...
 ```
 
 **Options:**
@@ -47,7 +47,7 @@ dbx-test [OPTIONS] COMMAND [ARGS]...
 Run test notebooks locally or remotely.
 
 ```bash
-dbx-test run [OPTIONS]
+dbx_test run [OPTIONS]
 ```
 
 **Options:**
@@ -65,19 +65,19 @@ dbx-test run [OPTIONS]
 
 ```bash
 # Run locally
-dbx-test run --local
+dbx_test run --local
 
 # Run remotely on dev environment
-dbx-test run --remote --env dev
+dbx_test run --remote --env dev
 
 # Run with specific pattern
-dbx-test run --local --pattern "*integration*"
+dbx_test run --local --pattern "*integration*"
 
 # Run with multiple output formats
-dbx-test run --remote --output-format junit --output-format html
+dbx_test run --remote --output-format junit --output-format html
 
 # Run in parallel
-dbx-test run --remote --parallel --env test
+dbx_test run --remote --parallel --env test
 ```
 
 #### `discover` - Discover Tests
@@ -85,7 +85,7 @@ dbx-test run --remote --parallel --env test
 Discover all test notebooks in a directory.
 
 ```bash
-dbx-test discover [OPTIONS]
+dbx_test discover [OPTIONS]
 ```
 
 **Options:**
@@ -95,7 +95,7 @@ dbx-test discover [OPTIONS]
 **Example:**
 
 ```bash
-dbx-test discover --tests-dir tests
+dbx_test discover --tests-dir tests
 ```
 
 #### `report` - Generate Reports
@@ -103,25 +103,25 @@ dbx-test discover --tests-dir tests
 Generate test report from a previous run.
 
 ```bash
-dbx-test report [OPTIONS]
+dbx_test report [OPTIONS]
 ```
 
 **Options:**
 - `--run-id TEXT` - Run ID (default: latest)
 - `--format TEXT` - Output format: console, junit, json, html (default: console)
-- `--output-dir PATH` - Test results directory (default: .dbx-test-results)
+- `--output-dir PATH` - Test results directory (default: .dbx_test-results)
 
 **Examples:**
 
 ```bash
 # Show latest results
-dbx-test report
+dbx_test report
 
 # Generate HTML report
-dbx-test report --format html
+dbx_test report --format html
 
 # Show specific run
-dbx-test report --run-id 20250128_143022
+dbx_test report --run-id 20250128_143022
 ```
 
 #### `upload` - Upload Notebooks
@@ -129,7 +129,7 @@ dbx-test report --run-id 20250128_143022
 Upload test notebooks to Databricks workspace.
 
 ```bash
-dbx-test upload [OPTIONS]
+dbx_test upload [OPTIONS]
 ```
 
 **Options:**
@@ -141,7 +141,7 @@ dbx-test upload [OPTIONS]
 **Example:**
 
 ```bash
-dbx-test upload --workspace-path "/Workspace/Repos/myuser/tests"
+dbx_test upload --workspace-path "/Workspace/Repos/myuser/tests"
 ```
 
 #### `scaffold` - Create Test Template
@@ -149,7 +149,7 @@ dbx-test upload --workspace-path "/Workspace/Repos/myuser/tests"
 Create a new test notebook from template.
 
 ```bash
-dbx-test scaffold [OPTIONS] NOTEBOOK_NAME
+dbx_test scaffold [OPTIONS] NOTEBOOK_NAME
 ```
 
 **Options:**
@@ -158,7 +158,7 @@ dbx-test scaffold [OPTIONS] NOTEBOOK_NAME
 **Example:**
 
 ```bash
-dbx-test scaffold my_new_test
+dbx_test scaffold my_new_test
 ```
 
 ---
@@ -202,7 +202,7 @@ paths:
   local_tests_dir: string   # Local tests directory (default: tests)
 
 reporting:
-  output_dir: string        # Output directory (default: .dbx-test-results)
+  output_dir: string        # Output directory (default: .dbx_test-results)
   formats: list             # Report formats (default: [junit, console, json])
   fail_on_error: boolean    # Fail on test errors (default: true)
   verbose: boolean          # Verbose output (default: false)
@@ -222,7 +222,7 @@ parameters:                 # Optional: Default parameters for all tests
 Configuration management class.
 
 ```python
-from databricks_notebook_test_framework import TestConfig
+from dbx_test import TestConfig
 
 # Load from YAML
 config = TestConfig.from_yaml("config/test_config.yml")
@@ -239,7 +239,7 @@ config = TestConfig.get_default()
 Test discovery engine.
 
 ```python
-from databricks_notebook_test_framework import TestDiscovery
+from dbx_test import TestDiscovery
 
 # Initialize
 discovery = TestDiscovery(root_dir="tests", pattern="**/*_test.py")
@@ -259,7 +259,7 @@ discovery.print_summary(tests)
 Local test execution.
 
 ```python
-from databricks_notebook_test_framework import LocalTestRunner
+from dbx_test import LocalTestRunner
 
 # Initialize
 runner = LocalTestRunner(verbose=True)
@@ -279,7 +279,7 @@ if runner.check_nutter_installed():
 Remote test execution on Databricks.
 
 ```python
-from databricks_notebook_test_framework import RemoteTestRunner
+from dbx_test import RemoteTestRunner
 
 # Initialize
 runner = RemoteTestRunner(config=test_config, verbose=True)
@@ -296,7 +296,7 @@ results = runner.run_tests(
 Report generation.
 
 ```python
-from databricks_notebook_test_framework import TestReporter
+from dbx_test import TestReporter
 
 # Initialize
 reporter = TestReporter(verbose=True)
@@ -390,8 +390,8 @@ class TestIntegration(NutterFixture):
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/databricks-notebook-test-framework/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/databricks-notebook-test-framework/discussions)
+- **Issues**: [GitHub Issues](https://github.com/yourusername/dbx_test/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/yourusername/dbx_test/discussions)
 - **Contributing**: See [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ---

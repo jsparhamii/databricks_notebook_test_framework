@@ -8,7 +8,7 @@ without using the CLI.
 from typing import Dict, Any, Optional, List, Union
 import sys
 import traceback
-from databricks_notebook_test_framework.testing import (
+from dbx_test.testing import (
     NotebookTestFixture,
     discover_fixtures,
     run_tests as run_all_tests,
@@ -252,7 +252,7 @@ def run_notebook_tests(
     
     Example:
         # At the end of your test notebook, add:
-        from databricks_notebook_test_framework import run_notebook_tests
+        from dbx_test import run_notebook_tests
         
         # Run all tests
         run_notebook_tests()
@@ -279,7 +279,7 @@ def install_notebook_package(package_path: str):
     
     Example:
         # Install from DBFS
-        install_notebook_package("/dbfs/FileStore/wheels/databricks_notebook_test_framework-0.1.0-py3-none-any.whl")
+        install_notebook_package("/dbfs/FileStore/wheels/dbx_test-0.1.0-py3-none-any.whl")
         
         # Install from PyPI (if uploaded)
         install_notebook_package("databricks-notebook-test-framework")
@@ -297,7 +297,7 @@ def install_notebook_package(package_path: str):
         if result.returncode == 0:
             print("✓ Installation successful!")
             print("\nYou can now use:")
-            print("  from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests")
+            print("  from dbx_test import NotebookTestFixture, run_notebook_tests")
         else:
             print(f"✗ Installation failed:")
             print(result.stderr)

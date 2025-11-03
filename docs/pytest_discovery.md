@@ -45,13 +45,13 @@ my_project/
 
 ```bash
 # Discovers all test_* and *_test files automatically
-dbx-test run --local
+dbx_test run --local
 
 # Same automatic discovery for remote tests
-dbx-test run --remote --profile dev
+dbx_test run --remote --profile dev
 
 # Workspace tests also use automatic discovery
-dbx-test run --remote --workspace-tests \
+dbx_test run --remote --workspace-tests \
   --tests-dir "/Workspace/Repos/my-repo/tests"
 ```
 
@@ -76,14 +76,14 @@ Running tests...
 ### Before (Old Way)
 ```bash
 # Had to specify pattern
-dbx-test run --remote --pattern "test_*"
-dbx-test run --remote --pattern "*integration*"
+dbx_test run --remote --pattern "test_*"
+dbx_test run --remote --pattern "*integration*"
 ```
 
 ### After (New Way)
 ```bash
 # No pattern needed! Automatic discovery
-dbx-test run --remote
+dbx_test run --remote
 
 # Just use descriptive names
 # test_integration.py or integration_test.py
@@ -122,7 +122,7 @@ In Databricks workspace, notebooks don't show `.py` extension in the UI, but the
 
 ### Running
 ```bash
-dbx-test run --remote --workspace-tests \
+dbx_test run --remote --workspace-tests \
   --profile adb \
   --tests-dir "/Workspace/Users/me/tests"
 ```

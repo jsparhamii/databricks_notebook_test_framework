@@ -247,43 +247,4 @@ class DatabricksHelper:
         except Exception as e:
             print(f"Error listing notebooks in {workspace_path}: {e}")
             return []
-    
-    def upload_file_to_workspace(self, local_path: str, workspace_path: str) -> str:
-        """
-        Upload a file to the workspace.
-        
-        Args:
-            local_path: Local file path
-            workspace_path: Workspace destination path
-        
-        Returns:
-            Full workspace path of uploaded file
-        """
-        import base64
-        
-        # Read file content
-        with open(local_path, "rb") as f:
-            content = base64.b64encode(f.read()).decode('utf-8')
-        
-        # Upload to workspace
-        self.client.workspace.import_(
-            path=workspace_path,
-            format="AUTO",
-            content=content,
-            overwrite=True,
-        )
-        
-        return workspace_path
-    
-    def delete_workspace_file(self, workspace_path: str) -> None:
-        """
-        Delete a file from workspace.
-        
-        Args:
-            workspace_path: Workspace file path
-        """
-        try:
-            self.client.workspace.delete(workspace_path, recursive=False)
-        except Exception as e:
-            print(f"Warning: Could not delete {workspace_path}: {e}")
 

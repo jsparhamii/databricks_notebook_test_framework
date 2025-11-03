@@ -12,8 +12,8 @@ Get started with the Databricks Notebook Test Framework in 5 minutes.
 
 ```bash
 # Clone or download the repository
-git clone https://github.com/yourusername/databricks-notebook-test-framework.git
-cd databricks-notebook-test-framework
+git clone https://github.com/yourusername/dbx_test.git
+cd dbx_test
 
 # Install
 pip install -e .
@@ -26,13 +26,13 @@ pip install -e .
 mkdir tests
 
 # Generate test scaffold
-dbx-test scaffold my_first_test
+dbx_test scaffold my_first_test
 ```
 
 This creates `tests/my_first_test_test.py`. Edit it:
 
 ```python
-from databricks_notebook_test_framework import NotebookTestFixture
+from dbx_test import NotebookTestFixture
 
 
 class TestMyFirstTest(NotebookTestFixture):
@@ -67,7 +67,7 @@ class TestMyFirstTest(NotebookTestFixture):
 pip install pyspark
 
 # Run the test
-dbx-test run --local --tests-dir tests
+dbx_test run --local --tests-dir tests
 ```
 
 You'll see output like:
@@ -107,7 +107,7 @@ cluster:
   cluster_id: "your-cluster-id"  # Or leave empty for serverless
   
 reporting:
-  output_dir: ".dbx-test-results"
+  output_dir: ".dbx_test-results"
   formats: ["console", "junit"]
 ```
 
@@ -115,14 +115,14 @@ reporting:
 
 ```bash
 # Run remotely using Databricks CLI authentication
-dbx-test run --remote --tests-dir /Workspace/Users/user@email.com/project/tests
+dbx_test run --remote --tests-dir /Workspace/Users/user@email.com/project/tests
 
 # Or specify a profile
-dbx-test run --remote --profile dev \
+dbx_test run --remote --profile dev \
   --tests-dir /Workspace/Users/user@email.com/project/tests
 
 # With multiple output formats
-dbx-test run --remote \
+dbx_test run --remote \
   --tests-dir /Workspace/Users/user@email.com/project/tests \
   --output-format console \
   --output-format junit \
@@ -141,21 +141,21 @@ dbx-test run --remote \
 
 ```bash
 # Discover all tests (pytest-style: test_* and *_test)
-dbx-test discover --tests-dir tests
+dbx_test discover --tests-dir tests
 
 # Generate HTML report (local tests)
-dbx-test run --local --tests-dir tests --output-format html
+dbx_test run --local --tests-dir tests --output-format html
 
 # Run tests in parallel (remote)
-dbx-test run --remote --parallel \
+dbx_test run --remote --parallel \
   --tests-dir /Workspace/Users/user@email.com/project/tests
 
 # Verbose output
-dbx-test run --remote --verbose \
+dbx_test run --remote --verbose \
   --tests-dir /Workspace/Users/user@email.com/project/tests
 
 # Run workspace tests (tests already in Databricks)
-dbx-test run --remote --workspace-tests \
+dbx_test run --remote --workspace-tests \
   --tests-dir /Workspace/Users/user@email.com/project/tests
 ```
 
@@ -163,34 +163,34 @@ dbx-test run --remote --workspace-tests \
 
 ```bash
 # Generate more test scaffolds
-dbx-test scaffold customer_analysis
-dbx-test scaffold sales_pipeline
-dbx-test scaffold data_quality
+dbx_test scaffold customer_analysis
+dbx_test scaffold sales_pipeline
+dbx_test scaffold data_quality
 ```
 
 ## Common Commands
 
 ```bash
 # Local testing (from local tests/ directory)
-dbx-test run --local --tests-dir tests
+dbx_test run --local --tests-dir tests
 
 # Remote testing (from workspace)
-dbx-test run --remote \
+dbx_test run --remote \
   --tests-dir /Workspace/Users/user@email.com/project/tests
 
 # With specific profile
-dbx-test run --remote --profile prod \
+dbx_test run --remote --profile prod \
   --tests-dir /Workspace/Users/user@email.com/project/tests
 
 # Workspace tests (tests already in Databricks)
-dbx-test run --remote --workspace-tests --profile dev \
+dbx_test run --remote --workspace-tests --profile dev \
   --tests-dir /Workspace/Users/user@email.com/project/tests
 
 # Discover tests (local)
-dbx-test discover --tests-dir tests
+dbx_test discover --tests-dir tests
 
 # Multiple output formats
-dbx-test run --remote \
+dbx_test run --remote \
   --tests-dir /Workspace/Users/user@email.com/project/tests \
   --output-format console \
   --output-format junit \
@@ -198,21 +198,21 @@ dbx-test run --remote \
   --output-format html
 
 # Upload notebooks to workspace
-dbx-test upload --tests-dir tests \
+dbx_test upload --tests-dir tests \
   --workspace-path /Workspace/Users/user@email.com/project/tests \
   --profile dev
 
 # Create new test
-dbx-test scaffold my_test
+dbx_test scaffold my_test
 
 # Help
-dbx-test --help
-dbx-test run --help
+dbx_test --help
+dbx_test run --help
 ```
 
 ## Troubleshooting
 
-### "Command not found: dbx-test"
+### "Command not found: dbx_test"
 
 ```bash
 # Reinstall
@@ -252,7 +252,7 @@ my-databricks-project/
 │   └── analytics_test.py
 ├── config/                 # Test configuration
 │   └── test_config.yml
-├── .dbx-test-results/     # Test results (gitignored)
+├── .dbx_test-results/     # Test results (gitignored)
 └── pyproject.toml         # Project config
 ```
 
@@ -269,7 +269,7 @@ my-databricks-project/
 Here's a complete real-world test:
 
 ```python
-from databricks_notebook_test_framework import NotebookTestFixture
+from dbx_test import NotebookTestFixture
 
 
 class TestCustomerETL(NotebookTestFixture):
@@ -350,10 +350,10 @@ Run it:
 
 ```bash
 # Run locally
-dbx-test run --local --tests-dir tests
+dbx_test run --local --tests-dir tests
 
 # Or run remotely on Databricks
-dbx-test run --remote --profile dev \
+dbx_test run --remote --profile dev \
   --tests-dir /Workspace/Users/user@email.com/project/tests
 ```
 

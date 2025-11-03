@@ -25,7 +25,7 @@ You'll be prompted for:
 That's it! The framework will automatically use your CLI configuration:
 
 ```bash
-dbx-test run --remote
+dbx_test run --remote
 ```
 
 ## Authentication Methods
@@ -116,7 +116,7 @@ workspace:
 
 ```bash
 export DATABRICKS_CONFIG_PROFILE="dev"
-dbx-test run --remote
+dbx_test run --remote
 ```
 
 **Method 3: Multiple Config Files**
@@ -133,8 +133,8 @@ workspace:
 
 Run with:
 ```bash
-dbx-test run --remote --config config/test_config_dev.yml
-dbx-test run --remote --config config/test_config_prod.yml
+dbx_test run --remote --config config/test_config_dev.yml
+dbx_test run --remote --config config/test_config_prod.yml
 ```
 
 ## Authentication Examples
@@ -158,7 +158,7 @@ cluster:
 
 **Run:**
 ```bash
-dbx-test run --remote
+dbx_test run --remote
 ```
 
 ### Example 2: Named Profile
@@ -178,7 +178,7 @@ workspace:
 
 **Run:**
 ```bash
-dbx-test run --remote
+dbx_test run --remote
 ```
 
 ### Example 3: Environment Variables Only
@@ -189,7 +189,7 @@ dbx-test run --remote
 export DATABRICKS_HOST="https://your-workspace.cloud.databricks.com"
 export DATABRICKS_TOKEN="dapi..."
 
-dbx-test run --remote --tests-dir tests
+dbx_test run --remote --tests-dir tests
 ```
 
 ### Example 4: Azure with CLI
@@ -201,7 +201,7 @@ If using Azure Databricks with Azure CLI:
 az login
 
 # The SDK will automatically use Azure CLI authentication
-dbx-test run --remote
+dbx_test run --remote
 ```
 
 ## Generating Databricks Token
@@ -252,7 +252,7 @@ export DATABRICKS_TOKEN="your-token-here"
     DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
     DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
   run: |
-    dbx-test run --remote
+    dbx_test run --remote
 ```
 
 ### Azure DevOps
@@ -261,7 +261,7 @@ export DATABRICKS_TOKEN="your-token-here"
 - script: |
     export DATABRICKS_HOST=$(DATABRICKS_HOST)
     export DATABRICKS_TOKEN=$(DATABRICKS_TOKEN)
-    dbx-test run --remote
+    dbx_test run --remote
   displayName: 'Run Tests'
 ```
 
@@ -272,7 +272,7 @@ withCredentials([
     string(credentialsId: 'databricks-host', variable: 'DATABRICKS_HOST'),
     string(credentialsId: 'databricks-token', variable: 'DATABRICKS_TOKEN')
 ]) {
-    sh 'dbx-test run --remote'
+    sh 'dbx_test run --remote'
 }
 ```
 

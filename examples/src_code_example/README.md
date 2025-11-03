@@ -33,7 +33,7 @@ Tests the `sum_column` function:
 # Import the source code
 # MAGIC %run "../src/example"
 
-from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+from dbx_test import NotebookTestFixture, run_notebook_tests
 import json
 
 class TestMyFirstTest(NotebookTestFixture):
@@ -131,7 +131,7 @@ dbutils.notebook.exit(json.dumps(results))
 
 ```bash
 # Run workspace tests
-dbx-test run --remote --workspace-tests --profile adb \
+dbx_test run --remote --workspace-tests --profile adb \
   --tests-dir "/Workspace/Users/your.name@databricks.com/dbx_test/test"
 ```
 
@@ -232,5 +232,5 @@ dbutils.notebook.exit(json.dumps(results))
 1. Create your own application code in `src/`
 2. Write tests in `tests/`
 3. Upload to Databricks workspace
-4. Run with `dbx-test` CLI
+4. Run with `dbx_test` CLI
 5. Integrate with CI/CD pipeline

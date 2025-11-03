@@ -29,11 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JSON report generation
 - HTML report generation
 - CLI tool with following commands:
-  - `dbx-test run` - Execute tests locally or remotely
-  - `dbx-test discover` - Discover test notebooks
-  - `dbx-test report` - Generate reports from previous runs
-  - `dbx-test upload` - Upload notebooks to Databricks workspace
-  - `dbx-test scaffold` - Generate test notebook templates
+  - `dbx_test run` - Execute tests locally or remotely
+  - `dbx_test discover` - Discover test notebooks
+  - `dbx_test report` - Generate reports from previous runs
+  - `dbx_test upload` - Upload notebooks to Databricks workspace
+  - `dbx_test scaffold` - Generate test notebook templates
 - YAML-based configuration system
 - Support for parameterized testing
 - Parallel test execution (remote)
@@ -195,8 +195,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details on:
 
 ## Links
 
-- [Repository](https://github.com/yourusername/databricks-notebook-test-framework)
+- [Repository](https://github.com/yourusername/dbx_test)
 - [Documentation](docs/)
-- [Issue Tracker](https://github.com/yourusername/databricks-notebook-test-framework/issues)
-- [Releases](https://github.com/yourusername/databricks-notebook-test-framework/releases)
+- [Issue Tracker](https://github.com/yourusername/dbx_test/issues)
+- [Releases](https://github.com/yourusername/dbx_test/releases)
 

@@ -3,7 +3,7 @@ requires = ["setuptools>=65.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "databricks-notebook-test-framework"
+name = "dbx_test"
 version = "0.1.0"
 description = "Automated testing framework for Databricks notebooks"
 readme = "README.md"
@@ -44,19 +44,19 @@ dev = [
 ]
 
 [project.scripts]
-dbx-test = "databricks_notebook_test_framework.cli:main"
+dbx_test = "dbx_test.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/yourusername/databricks-notebook-test-framework"
-Documentation = "https://github.com/yourusername/databricks-notebook-test-framework/docs"
-Repository = "https://github.com/yourusername/databricks-notebook-test-framework"
+Homepage = "https://github.com/yourusername/dbx_test"
+Documentation = "https://github.com/yourusername/dbx_test/docs"
+Repository = "https://github.com/yourusername/dbx_test"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["databricks_notebook_test_framework*"]
+include = ["dbx_test*"]
 
 [tool.black]
 line-length = 100

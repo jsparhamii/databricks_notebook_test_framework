@@ -7,7 +7,7 @@ The framework now supports running multiple test classes in a single call!
 ### Run a Single Test Class
 
 ```python
-from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+from dbx_test import NotebookTestFixture, run_notebook_tests
 import json
 
 class TestMyFirstTest(NotebookTestFixture):
@@ -22,7 +22,7 @@ dbutils.notebook.exit(json.dumps(results))
 ### Run Multiple Test Classes
 
 ```python
-from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+from dbx_test import NotebookTestFixture, run_notebook_tests
 import json
 
 class TestMyFirstTest(NotebookTestFixture):
@@ -45,7 +45,7 @@ dbutils.notebook.exit(json.dumps(results))
 ### Run All Test Classes (Auto-Discovery)
 
 ```python
-from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+from dbx_test import NotebookTestFixture, run_notebook_tests
 import json
 
 class TestMyFirstTest(NotebookTestFixture):
@@ -68,7 +68,7 @@ Here's a complete notebook with multiple test classes:
 ```python
 # Databricks notebook source
 
-from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+from dbx_test import NotebookTestFixture, run_notebook_tests
 import json
 
 # COMMAND ----------

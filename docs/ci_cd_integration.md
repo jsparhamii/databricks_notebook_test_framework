@@ -38,13 +38,13 @@ jobs:
         DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
         DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
       run: |
-        dbx-test run --remote --tests-dir tests
+        dbx_test run --remote --tests-dir tests
     
     - name: Publish results
       uses: EnricoMi/publish-unit-test-result-action@v2
       if: always()
       with:
-        files: .dbx-test-results/**/report.xml
+        files: .dbx_test-results/**/report.xml
 ```
 
 ### Advanced Setup with Multiple Environments
@@ -70,14 +70,14 @@ jobs:
     - name: Install and test locally
       run: |
         pip install -e . nutter
-        dbx-test run --local --tests-dir tests
+        dbx_test run --local --tests-dir tests
     
     - name: Upload results
       uses: actions/upload-artifact@v3
       if: always()
       with:
         name: local-test-results
-        path: .dbx-test-results/
+        path: .dbx_test-results/
 
   test-remote:
     runs-on: ubuntu-latest
@@ -99,7 +99,7 @@ jobs:
         DATABRICKS_TOKEN: ${{ secrets[format('DATABRICKS_TOKEN_{0}', matrix.environment)] }}
         DATABRICKS_HOST: ${{ secrets[format('DATABRICKS_HOST_{0}', matrix.environment)] }}
       run: |
-        dbx-test run --remote \
+        dbx_test run --remote \
           --env ${{ matrix.environment }} \
           --config config/test_config_${{ matrix.environment }}.yml
     
@@ -107,7 +107,7 @@ jobs:
       uses: EnricoMi/publish-unit-test-result-action@v2
       if: always()
       with:
-        files: .dbx-test-results/**/report.xml
+        files: .dbx_test-results/**/report.xml
         check_name: Tests (${{ matrix.environment }})
 ```
 
@@ -141,7 +141,7 @@ steps:
   displayName: 'Install dependencies'
 
 - script: |
-    dbx-test run --remote --tests-dir tests
+    dbx_test run --remote --tests-dir tests
   displayName: 'Run tests'
   env:
     DATABRICKS_TOKEN: $(DATABRICKS_TOKEN)
@@ -152,7 +152,7 @@ steps:
   inputs:
     testResultsFormat: 'JUnit'
     testResultsFiles: '**/report.xml'
-    searchFolder: '.dbx-test-results'
+    searchFolder: '.dbx_test-results'
 ```
 
 ### Multi-Stage Pipeline
@@ -170,7 +170,7 @@ stages:
     - script: pip install -e . nutter
       displayName: 'Install'
     
-    - script: dbx-test run --local --tests-dir tests
+    - script: dbx_test run --local --tests-dir tests
       displayName: 'Run local tests'
     
     - task: PublishTestResults@2
@@ -178,7 +178,7 @@ stages:
       inputs:
         testResultsFormat: 'JUnit'
         testResultsFiles: '**/report.xml'
-        searchFolder: '.dbx-test-results'
+        searchFolder: '.dbx_test-results'
 
 - stage: DeployDev
   dependsOn: Test
@@ -194,7 +194,7 @@ stages:
       displayName: 'Install'
     
     - script: |
-        dbx-test run --remote --env dev --config config/test_config_dev.yml
+        dbx_test run --remote --env dev --config config/test_config_dev.yml
       displayName: 'Test in Dev'
       env:
         DATABRICKS_TOKEN: $(DATABRICKS_DEV_TOKEN)
@@ -213,7 +213,7 @@ stages:
       displayName: 'Install'
     
     - script: |
-        dbx-test run --remote --env prod --config config/test_config_prod.yml
+        dbx_test run --remote --env prod --config config/test_config_prod.yml
       displayName: 'Test in Prod'
       env:
         DATABRICKS_TOKEN: $(DATABRICKS_PROD_TOKEN)
@@ -239,21 +239,21 @@ variables:
   artifacts:
     when: always
     reports:
-      junit: .dbx-test-results/**/report.xml
+      junit: .dbx_test-results/**/report.xml
     paths:
-      - .dbx-test-results/
+      - .dbx_test-results/
 
 test:local:
   extends: .test_template
   stage: test
   script:
-    - dbx-test run --local --tests-dir tests
+    - dbx_test run --local --tests-dir tests
 
 test:remote:dev:
   extends: .test_template
   stage: test
   script:
-    - dbx-test run --remote --env dev --config config/test_config_dev.yml
+    - dbx_test run --remote --env dev --config config/test_config_dev.yml
   only:
     - develop
     - merge_requests
@@ -262,7 +262,7 @@ test:remote:prod:
   extends: .test_template
   stage: deploy
   script:
-    - dbx-test run --remote --env prod --config config/test_config_prod.yml
+    - dbx_test run --remote --env prod --config config/test_config_prod.yml
   only:
     - main
 ```
@@ -295,7 +295,7 @@ pipeline {
             steps {
                 sh '''
                     . venv/bin/activate
-                    dbx-test run --local --tests-dir tests
+                    dbx_test run --local --tests-dir tests
                 '''
             }
         }
@@ -311,7 +311,7 @@ pipeline {
                 ]) {
                     sh '''
                         . venv/bin/activate
-                        dbx-test run --remote --tests-dir tests
+                        dbx_test run --remote --tests-dir tests
                     '''
                 }
             }
@@ -320,8 +320,8 @@ pipeline {
     
     post {
         always {
-            junit '.dbx-test-results/**/report.xml'
-            archiveArtifacts artifacts: '.dbx-test-results/**/*', allowEmptyArchive: true
+            junit '.dbx_test-results/**/report.xml'
+            archiveArtifacts artifacts: '.dbx_test-results/**/*', allowEmptyArchive: true
         }
     }
 }
@@ -359,11 +359,11 @@ jobs:
           key: v1-dependencies-{{ checksum "pyproject.toml" }}
       - run:
           name: Run local tests
-          command: dbx-test run --local --tests-dir tests
+          command: dbx_test run --local --tests-dir tests
       - store_test_results:
-          path: .dbx-test-results
+          path: .dbx_test-results
       - store_artifacts:
-          path: .dbx-test-results
+          path: .dbx_test-results
 
   test-remote:
     executor: python-executor
@@ -375,12 +375,12 @@ jobs:
       - run:
           name: Run remote tests
           command: |
-            dbx-test run --remote --tests-dir tests
+            dbx_test run --remote --tests-dir tests
           environment:
             DATABRICKS_TOKEN: ${DATABRICKS_TOKEN}
             DATABRICKS_HOST: ${DATABRICKS_HOST}
       - store_test_results:
-          path: .dbx-test-results
+          path: .dbx_test-results
 
 workflows:
   version: 2
@@ -431,7 +431,7 @@ Enable parallel execution for faster CI/CD:
 ```yaml
 - name: Run tests in parallel
   run: |
-    dbx-test run --remote --parallel --max-parallel-jobs 10
+    dbx_test run --remote --parallel --max-parallel-jobs 10
 ```
 
 ### 4. Caching
@@ -473,7 +473,7 @@ Always publish test reports:
   uses: EnricoMi/publish-unit-test-result-action@v2
   if: always()
   with:
-    files: .dbx-test-results/**/report.xml
+    files: .dbx_test-results/**/report.xml
 ```
 
 ### 7. Quality Gates
@@ -483,8 +483,8 @@ Set quality thresholds:
 ```yaml
 - name: Check test coverage
   run: |
-    PASSED=$(cat .dbx-test-results/latest/results.json | jq '.summary.passed')
-    TOTAL=$(cat .dbx-test-results/latest/results.json | jq '.summary.total')
+    PASSED=$(cat .dbx_test-results/latest/results.json | jq '.summary.passed')
+    TOTAL=$(cat .dbx_test-results/latest/results.json | jq '.summary.total')
     PASS_RATE=$(echo "scale=2; $PASSED / $TOTAL" | bc)
     
     if (( $(echo "$PASS_RATE < 0.95" | bc -l) )); then

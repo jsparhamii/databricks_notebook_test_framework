@@ -8,13 +8,13 @@ from pathlib import Path
 from datetime import datetime
 from rich.console import Console
 
-from databricks_notebook_test_framework import __version__
-from databricks_notebook_test_framework.config import TestConfig
-from databricks_notebook_test_framework.discovery import TestDiscovery
-from databricks_notebook_test_framework.runner_local import LocalTestRunner
-from databricks_notebook_test_framework.runner_remote import RemoteTestRunner
-from databricks_notebook_test_framework.reporting import TestReporter
-from databricks_notebook_test_framework.artifacts import ArtifactManager
+from dbx_test import __version__
+from dbx_test.config import TestConfig
+from dbx_test.discovery import TestDiscovery
+from dbx_test.runner_local import LocalTestRunner
+from dbx_test.runner_remote import RemoteTestRunner
+from dbx_test.reporting import TestReporter
+from dbx_test.artifacts import ArtifactManager
 
 
 console = Console()
@@ -147,7 +147,7 @@ def run(local, remote, env, parallel, output_format, output_dir, config, profile
                 console.print(f"[dim]Running tests from workspace: {tests_dir}[/dim]")
             
             # For workspace tests, we'll discover and run them directly
-            from databricks_notebook_test_framework.runner_remote import RemoteTestRunner
+            from dbx_test.runner_remote import RemoteTestRunner
             
             runner = RemoteTestRunner(test_config, verbose=verbose)
             
@@ -216,8 +216,8 @@ def run(local, remote, env, parallel, output_format, output_dir, config, profile
                 console.print(f"Total: {total}, Passed: [green]{passed}[/green], Failed: [red]{failed}[/red]")
                 
                 # Generate reports based on output_format
-                from databricks_notebook_test_framework.reporting import TestReporter
-                from databricks_notebook_test_framework.artifacts import ArtifactManager
+                from dbx_test.reporting import TestReporter
+                from dbx_test.artifacts import ArtifactManager
                 
                 artifact_manager = ArtifactManager(test_config.reporting.output_dir)
                 reporter = TestReporter(verbose=verbose)
@@ -494,7 +494,7 @@ def upload(tests_dir, workspace_path, config, profile, pattern):
     console.print(f"[cyan]Uploading {len(tests)} test notebook(s)...[/cyan]")
     
     # Initialize Databricks helper
-    from databricks_notebook_test_framework.utils.databricks import DatabricksHelper
+    from dbx_test.utils.databricks import DatabricksHelper
     
     auth_config = test_config.workspace.get_auth_config()
     db_helper = DatabricksHelper(**auth_config)
@@ -547,7 +547,7 @@ def scaffold(notebook_name, output_dir):
 Unit tests for {notebook_name} notebook.
 """
 
-from databricks_notebook_test_framework import NotebookTestFixture
+from dbx_test import NotebookTestFixture
 
 
 class Test{notebook_name.replace("_", " ").title().replace(" ", "")}(NotebookTestFixture):

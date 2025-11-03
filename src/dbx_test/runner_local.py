@@ -67,7 +67,7 @@ class LocalTestRunner:
                 spec.loader.exec_module(module)
                 
                 # Import our test framework
-                from databricks_notebook_test_framework.testing import discover_fixtures
+                from dbx_test.testing import discover_fixtures
                 
                 # Discover all test fixtures in the module
                 fixtures = discover_fixtures(module)

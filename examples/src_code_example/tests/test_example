@@ -3,7 +3,7 @@
 
 # COMMAND ----------
 
-from databricks_notebook_test_framework import NotebookTestFixture, run_notebook_tests
+from dbx_test import NotebookTestFixture, run_notebook_tests
 import json
 
 # COMMAND ----------

@@ -12,8 +12,8 @@
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/databricks-notebook-test-framework.git
-cd databricks-notebook-test-framework
+git clone https://github.com/yourusername/dbx_test.git
+cd dbx_test
 ```
 
 2. Install in editable mode:
@@ -28,13 +28,13 @@ pip install nutter
 
 4. Verify installation:
 ```bash
-dbx-test --version
+dbx_test --version
 ```
 
 ### Method 2: Install from PyPI (Once Published)
 
 ```bash
-pip install databricks-notebook-test-framework
+pip install dbx_test
 pip install nutter
 ```
 
@@ -44,8 +44,8 @@ For contributors and developers:
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/databricks-notebook-test-framework.git
-cd databricks-notebook-test-framework
+git clone https://github.com/yourusername/dbx_test.git
+cd dbx_test
 
 # Install with dev dependencies
 pip install -e ".[dev]"
@@ -57,13 +57,13 @@ Run the following commands to verify your installation:
 
 ```bash
 # Check version
-dbx-test --version
+dbx_test --version
 
 # Display help
-dbx-test --help
+dbx_test --help
 
 # Test discovery (in a directory with tests)
-dbx-test discover --tests-dir tests
+dbx_test discover --tests-dir tests
 ```
 
 ## Configuration Setup
@@ -96,7 +96,7 @@ paths:
   test_pattern: "**/*_test.py"
 
 reporting:
-  output_dir: ".dbx-test-results"
+  output_dir: ".dbx_test-results"
   formats: ["junit", "console"]
 ```
 
@@ -172,7 +172,7 @@ mkdir -p tests
 ### 2. Generate Test Scaffold
 
 ```bash
-dbx-test scaffold my_first_notebook
+dbx_test scaffold my_first_notebook
 ```
 
 This creates `tests/my_first_notebook_test.py` with a template.
@@ -180,23 +180,23 @@ This creates `tests/my_first_notebook_test.py` with a template.
 ### 3. Run Your Test Locally
 
 ```bash
-dbx-test run --local --tests-dir tests
+dbx_test run --local --tests-dir tests
 ```
 
 ### 4. Run Your Test Remotely
 
 ```bash
-dbx-test run --remote --tests-dir tests --config config/test_config.yml
+dbx_test run --remote --tests-dir tests --config config/test_config.yml
 ```
 
 ## Troubleshooting
 
-### Issue: Command not found: dbx-test
+### Issue: Command not found: dbx_test
 
 **Solution:**
 - Ensure installation completed successfully
 - Check that Python scripts directory is in PATH
-- Try: `python -m databricks_notebook_test_framework.cli --help`
+- Try: `python -m dbx_test.cli --help`
 
 ### Issue: ModuleNotFoundError: No module named 'nutter'
 
@@ -251,7 +251,7 @@ pip install --upgrade databricks-sdk
   "files.exclude": {
     "**/__pycache__": true,
     "**/*.pyc": true,
-    ".dbx-test-results": true
+    ".dbx_test-results": true
   }
 }
 ```
@@ -283,14 +283,14 @@ RUN pip install nutter
 COPY . .
 
 # Run tests
-CMD ["dbx-test", "run", "--local", "--tests-dir", "tests"]
+CMD ["dbx_test", "run", "--local", "--tests-dir", "tests"]
 ```
 
 Build and run:
 
 ```bash
-docker build -t dbx-test .
-docker run -e DATABRICKS_TOKEN=$DATABRICKS_TOKEN dbx-test
+docker build -t dbx_test .
+docker run -e DATABRICKS_TOKEN=$DATABRICKS_TOKEN dbx_test
 ```
 
 ## Next Steps

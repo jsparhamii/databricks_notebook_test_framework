@@ -1,6 +1,6 @@
 # Publishing to PyPI
 
-This guide explains how to publish the `databricks-notebook-test-framework` package to PyPI.
+This guide explains how to publish the `dbx_test` package to PyPI.
 
 ## Prerequisites
 
@@ -10,16 +10,16 @@ Before publishing, update the following in `pyproject.toml`:
 
 ```toml
 [project]
-name = "databricks-notebook-test-framework"
+name = "dbx_test"
 version = "0.1.0"  # Update this for each release
 authors = [
     {name = "Your Name", email = "your.email@example.com"}  # Update with your info
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/databricks-notebook-test-framework"  # Update with your repo
-Documentation = "https://github.com/yourusername/databricks-notebook-test-framework/docs"
-Repository = "https://github.com/yourusername/databricks-notebook-test-framework"
+Homepage = "https://github.com/yourusername/dbx_test"  # Update with your repo
+Documentation = "https://github.com/yourusername/dbx_test/docs"
+Repository = "https://github.com/yourusername/dbx_test"
 ```
 
 ### 2. Install Required Tools
@@ -81,8 +81,8 @@ Document your changes in `CHANGELOG.md`:
 python -m build
 
 # This creates:
-# - dist/databricks_notebook_test_framework-0.1.0-py3-none-any.whl
-# - dist/databricks-notebook-test-framework-0.1.0.tar.gz
+# - dist/dbx_test-0.1.0-py3-none-any.whl
+# - dist/dbx_test-0.1.0.tar.gz
 ```
 
 ### Step 5: Test the Package Locally
@@ -91,10 +91,10 @@ python -m build
 # Install in a fresh virtual environment
 python -m venv test_env
 source test_env/bin/activate  # On Windows: test_env\Scripts\activate
-pip install dist/databricks_notebook_test_framework-0.1.0-py3-none-any.whl
+pip install dist/dbx_test-0.1.0-py3-none-any.whl
 
 # Test the CLI
-dbx-test --version
+dbx_test --version
 
 # Deactivate when done
 deactivate
@@ -116,7 +116,7 @@ python -m twine upload --repository testpypi dist/*
 Test the installation from TestPyPI:
 
 ```bash
-pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple databricks-notebook-test-framework
+pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple dbx_test
 ```
 
 ### Step 7: Upload to PyPI
@@ -134,12 +134,12 @@ python -m twine upload dist/*
 
 ### Step 8: Verify the Upload
 
-1. Visit https://pypi.org/project/databricks-notebook-test-framework/
+1. Visit https://pypi.org/project/dbx_test/
 2. Check that the metadata, description, and links are correct
 3. Test installation:
 
 ```bash
-pip install databricks-notebook-test-framework
+pip install dbx_test
 ```
 
 ### Step 9: Tag the Release in Git
@@ -155,7 +155,7 @@ git push origin v0.1.0
 
 1. Go to https://pypi.org/manage/account/token/
 2. Click "Add API token"
-3. Give it a name (e.g., "databricks-notebook-test-framework")
+3. Give it a name (e.g., "dbx_test")
 4. Set scope to "Entire account" or specific project
 5. Copy the token (starts with `pypi-`)
 
@@ -243,10 +243,10 @@ After publishing to PyPI, you can simplify the remote runner to use PyPI instead
 
 ```python
 # Instead of building and uploading wheel:
-libraries = [{"pypi": {"package": "databricks-notebook-test-framework"}}]
+libraries = [{"pypi": {"package": "dbx_test"}}]
 
 # Or specify a version:
-libraries = [{"pypi": {"package": "databricks-notebook-test-framework==0.1.0"}}]
+libraries = [{"pypi": {"package": "dbx_test==0.1.0"}}]
 ```
 
 ## Checklist Before Publishing
