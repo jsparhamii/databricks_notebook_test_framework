@@ -112,10 +112,13 @@ def run(local, remote, env, target, parallel, output_format, output_dir, config,
         if verbose:
             console.print(f"[dim]Detecting Databricks Asset Bundle with target: {target}[/dim]")
         
+        # For bundle projects, if tests_dir is the default "tests", use root instead
+        bundle_tests_dir_relative = tests_dir if tests_dir != "tests" else ""
+        
         # Get bundle tests directory
         bundle_tests_dir, bundle_name = get_bundle_tests_dir(
             target=target,
-            tests_dir_relative=tests_dir,
+            tests_dir_relative=bundle_tests_dir_relative,
             profile=profile,
         )
         
@@ -586,10 +589,9 @@ def scaffold(notebook_name, output_dir):
     
     if test_file.exists():
         console.print(f"[yellow]Warning: Test file already exists: {test_file}[/yellow]")
-        return
-    
-    # Generate template
-    template = f'''"""
+    else:
+        # Generate template
+        template = f'''"""
 Unit tests for {notebook_name} notebook.
 """
 
@@ -631,15 +633,74 @@ class Test{notebook_name.replace("_", " ").title().replace(" ", "")}(NotebookTes
 
 # Additional test fixtures can be added below
 '''
+        
+        with open(test_file, "w", encoding="utf-8") as f:
+            f.write(template)
+        
+        console.print(f"[green]✓[/green] Created test notebook: {test_file}")
     
-    with open(test_file, "w", encoding="utf-8") as f:
-        f.write(template)
+    # Create config file if it doesn't exist
+    config_path = Path("config/test_config.yml")
     
-    console.print(f"[green]✓[/green] Created test notebook: {test_file}")
+    if not config_path.exists():
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Generate default config
+        config_template = '''# Databricks Notebook Test Framework Configuration
+
+workspace:
+  # Databricks CLI profile to use (can be overridden with --profile flag)
+  profile: "default"
+
+cluster:
+  # Libraries to install for remote execution
+  # Uncomment and modify as needed:
+  # libraries:
+  #   - pypi:
+  #       package: "pandas==2.0.0"
+  #   - whl: "git+https://github.com/your-org/your-package.git"
+  #   - whl: "/path/to/your/package.whl"
+  
+  # Use serverless compute (default, fastest option)
+  # Or specify a cluster:
+  # cluster_id: "your-cluster-id"
+  
+  # Or use a pre-created environment (recommended for serverless):
+  # environment_key: "your-environment-name"
+
+execution:
+  timeout: 600  # Timeout in seconds (10 minutes)
+  max_retries: 2
+  parallel: false  # Enable parallel execution for multiple tests
+  # max_parallel_jobs: 5  # Maximum number of parallel jobs (default: 5)
+
+reporting:
+  output_dir: ".dbx-test-results"
+  formats:
+    - "console"  # Print results to console
+    - "junit"    # Generate JUnit XML reports
+    # - "json"   # Generate JSON reports
+    # - "html"   # Generate HTML reports
+  verbose: false
+'''
+        
+        with open(config_path, "w", encoding="utf-8") as f:
+            f.write(config_template)
+        
+        console.print(f"[green]✓[/green] Created configuration file: {config_path}")
+    
+    # Show next steps
     console.print("\n[cyan]Next steps:[/cyan]")
     console.print(f"  1. Edit {test_file} and add your test cases")
+    if not config_path.exists():
+        console.print(f"  2. Configure settings in: {config_path}")
     console.print(f"  2. Run locally: dbx-test run --local")
     console.print(f"  3. Run remotely: dbx-test run --remote --env dev")
+    
+    # If bundle project detected, show bundle-specific instructions
+    if is_bundle_project():
+        console.print("\n[dim]💡 Tip: This appears to be a Databricks Asset Bundle project.[/dim]")
+        console.print(f"[dim]   You can run tests with: [cyan]dbx_test run --target dev[/cyan][/dim]")
 
 
 def main():

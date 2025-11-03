@@ -146,7 +146,7 @@ def resolve_workspace_path(
 
 def get_bundle_tests_dir(
     target: str,
-    tests_dir_relative: str = "tests",
+    tests_dir_relative: str = "",
     profile: Optional[str] = None,
     bundle_root: Optional[Path] = None,
 ) -> Tuple[Optional[str], Optional[str]]:
@@ -155,7 +155,7 @@ def get_bundle_tests_dir(
     
     Args:
         target: Target name (e.g., 'dev', 'prod')
-        tests_dir_relative: Relative path to tests within bundle (default: 'tests')
+        tests_dir_relative: Relative path to tests within bundle (default: "" for root)
         profile: Databricks profile name
         bundle_root: Bundle root directory (auto-detected if not provided)
         
@@ -166,9 +166,12 @@ def get_bundle_tests_dir(
         For a bundle with:
         - name: my_project
         - target dev root_path: /Workspace/Users/user@company.com/.bundle/${bundle.name}/dev
-        - tests in: tests/
+        - tests_dir_relative: "src/tests"
         
-        Returns: ('/Workspace/Users/user@company.com/.bundle/my_project/dev/files/tests', 'my_project')
+        Returns: ('/Workspace/Users/user@company.com/.bundle/my_project/dev/files/src/tests', 'my_project')
+        
+        If tests_dir_relative is empty, returns the files root:
+        Returns: ('/Workspace/Users/user@company.com/.bundle/my_project/dev/files', 'my_project')
     """
     # Find bundle root
     if bundle_root is None:
@@ -224,7 +227,11 @@ def get_bundle_tests_dir(
         
         # Construct full tests path
         # Bundle files are deployed to {root_path}/files/
-        tests_path = f"{root_path}/files/{tests_dir_relative}"
+        if tests_dir_relative:
+            tests_path = f"{root_path}/files/{tests_dir_relative}"
+        else:
+            # If no relative path specified, use the files root
+            tests_path = f"{root_path}/files"
         
         return tests_path, bundle_name
         
