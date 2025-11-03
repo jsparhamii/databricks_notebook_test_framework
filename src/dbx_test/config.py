@@ -32,6 +32,14 @@ class ClusterConfig:
     spark_env_vars: Dict[str, str] = field(default_factory=dict)
     custom_tags: Dict[str, str] = field(default_factory=dict)
     
+    # Libraries to install on cluster (for non-serverless)
+    # For serverless, these will be converted to an inline environment
+    libraries: List[Dict[str, str]] = field(default_factory=list)
+    
+    # Environment key for serverless compute (pre-created environment)
+    # If not specified but libraries are provided, an inline environment will be created
+    environment_key: Optional[str] = None
+    
     def use_serverless(self) -> bool:
         """Check if we should use serverless compute."""
         return (
@@ -251,6 +259,8 @@ class TestConfig:
             spark_conf=cluster_data.get("spark_conf", {}),
             spark_env_vars=cluster_data.get("spark_env_vars", {}),
             custom_tags=cluster_data.get("custom_tags", {}),
+            libraries=cluster_data.get("libraries", []),
+            environment_key=cluster_data.get("environment_key"),
         )
         
         execution_data = data.get("execution") or {}

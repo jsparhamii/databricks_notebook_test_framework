@@ -88,6 +88,8 @@ class RemoteTestRunner:
                 use_serverless=use_serverless,
                 parameters=parameters,
                 timeout=self.config.execution.timeout,
+                libraries=self.config.cluster.libraries,
+                environment_key=self.config.cluster.environment_key,
             )
             
             # Wait for completion
@@ -384,6 +386,8 @@ class RemoteTestRunner:
                             use_serverless=use_serverless,
                             parameters=self.config.parameters,
                             timeout=self.config.execution.timeout,
+                            libraries=self.config.cluster.libraries,
+                            environment_key=self.config.cluster.environment_key,
                         )
                         
                         # Wait for completion

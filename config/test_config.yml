@@ -6,13 +6,16 @@ workspace:
   profile: "adb"
 
 cluster:
-  library:
-    - name: "dbx_test"
-      version: "0.1.0"
-      repo: "https://github.com/jsparhamii/dbx_test.git"
-  # Use serverless compute (default)
-  # Or uncomment to use an existing cluster:
-  # cluster_id: "your-cluster-id"
+  # Just specify libraries - they work with serverless using DAB-style inline environments!
+  libraries:
+    - pypi:
+        package: "git+https://github.com/jsparhamii/dbx_test.git"
+  
+  # Alternatively, use a pre-created environment:
+  # environment_key: "dbx_test_env"
+  
+  # Or use cluster compute with libraries:
+  # cluster_id: "your-cluster-id"  # or size: "S"
 
 execution:
   timeout: 600

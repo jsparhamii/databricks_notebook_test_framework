@@ -8,6 +8,9 @@ from databricks.sdk import WorkspaceClient
 from databricks.sdk.service.workspace import ImportFormat
 from databricks.sdk.service.jobs import RunResultState, RunLifeCycleState
 from pathlib import Path
+from rich.console import Console
+
+console = Console()
 
 
 class DatabricksHelper:
@@ -61,6 +64,64 @@ class DatabricksHelper:
         except Exception:
             return False
     
+    def _get_or_create_environment(self, libraries: List[Dict[str, str]]) -> str:
+        """
+        Get or create an environment for the given libraries.
+        Returns the environment key to use.
+        
+        Args:
+            libraries: List of library specifications
+            
+        Returns:
+            Environment key string
+        """
+        import hashlib
+        import json
+        
+        # Convert libraries to dependency list
+        dependencies = []
+        for lib in libraries:
+            if 'pypi' in lib:
+                dependencies.append(lib['pypi']['package'])
+            elif 'whl' in lib:
+                dependencies.append(lib['whl'])
+        
+        if not dependencies:
+            raise ValueError("No valid dependencies found in libraries")
+        
+        # Create a deterministic environment name based on dependencies
+        # This allows reuse across runs with same dependencies
+        deps_str = json.dumps(sorted(dependencies), sort_keys=True)
+        deps_hash = hashlib.md5(deps_str.encode()).hexdigest()[:8]
+        env_name = f"dbx_test_auto_{deps_hash}"
+        
+        # Check if environment already exists by trying to use it
+        # If it exists, Databricks will accept it; if not, creation will be attempted
+        print(f"Checking for existing environment: {env_name}")
+        
+        # For now, raise an error with helpful instructions
+        # Automatic environment creation via API is not yet available
+        raise RuntimeError(
+            f"\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"  Automatic environment creation is not yet available.\n"
+            f"  Please create an environment manually in your workspace:\n"
+            f"\n"
+            f"  1. Go to Databricks workspace → Compute → Environments\n"
+            f"  2. Click 'Create Environment'\n"
+            f"  3. Name: {env_name}\n"
+            f"  4. Client: 1\n"
+            f"  5. Add dependencies:\n"
+            f"     {chr(10).join(f'     - {dep}' for dep in dependencies)}\n"
+            f"\n"
+            f"  Then update your config with:\n"
+            f"    cluster:\n"
+            f"      environment_key: \"{env_name}\"\n"
+            f"\n"
+            f"  Or create with any name and update config accordingly.\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        )
+    
     def run_notebook(
         self,
         notebook_path: str,
@@ -70,6 +131,7 @@ class DatabricksHelper:
         parameters: Optional[Dict[str, str]] = None,
         timeout: int = 600,
         libraries: Optional[List[Dict[str, str]]] = None,
+        environment_key: Optional[str] = None,
     ) -> str:
         """
         Run a notebook directly and return run ID.
@@ -84,15 +146,18 @@ class DatabricksHelper:
             parameters: Notebook parameters
             timeout: Timeout in seconds
             libraries: List of library specifications to install
+            environment_key: Environment key for serverless (alternative to libraries)
         
         Returns:
             Run ID string
         """
-        from databricks.sdk.service.jobs import NotebookTask, SubmitTask
+        from databricks.sdk.service.jobs import NotebookTask, SubmitTask, Source
         
         # Build notebook task
+        # Use WORKSPACE source for files deployed via bundles
         notebook_task = NotebookTask(
             notebook_path=notebook_path,
+            source=Source.WORKSPACE,
             base_parameters=parameters or {},
         )
         
@@ -103,18 +168,81 @@ class DatabricksHelper:
             timeout_seconds=timeout,
         )
         
-        # Add libraries if provided
-        if libraries:
-            from databricks.sdk.service.compute import Library
-            task.libraries = [Library(**lib) for lib in libraries]
+        # Prepare job-level environments (for serverless)
+        job_environments = None
+        
+        # Handle libraries and environments
+        if use_serverless:
+            # For serverless, use environment (either pre-created or inline)
+            if environment_key:
+                # Use pre-created environment by key only
+                task.environment_key = environment_key
+            elif libraries:
+                # Create inline environment at job level (not task level)
+                # Convert libraries to pip dependencies format
+                dependencies = []
+                for lib in libraries:
+                    if 'pypi' in lib:
+                        dependencies.append(lib['pypi']['package'])
+                    elif 'whl' in lib:
+                        dependencies.append(lib['whl'])
+                
+                if dependencies:
+                    # Set environment_key on task to reference the inline environment
+                    task.environment_key = "default"
+                    
+                    # Define environment at job level using SDK classes
+                    from databricks.sdk.service.jobs import JobEnvironment
+                    from databricks.sdk.service.compute import Environment
+                    
+                    job_environments = [
+                        JobEnvironment(
+                            environment_key="default",
+                            spec=Environment(
+                                client="1",
+                                dependencies=dependencies
+                            )
+                        )
+                    ]
+        else:
+            # For clusters, use libraries directly
+            if libraries:
+                from databricks.sdk.service.compute import Library, PythonPyPiLibrary, MavenLibrary
+                
+                task_libraries = []
+                for lib in libraries:
+                    if 'pypi' in lib:
+                        # PyPI library
+                        task_libraries.append(Library(pypi=PythonPyPiLibrary(package=lib['pypi']['package'])))
+                    elif 'whl' in lib:
+                        # Wheel library
+                        task_libraries.append(Library(whl=lib['whl']))
+                    elif 'jar' in lib:
+                        # JAR library
+                        task_libraries.append(Library(jar=lib['jar']))
+                    elif 'maven' in lib:
+                        # Maven library
+                        task_libraries.append(Library(maven=MavenLibrary(coordinates=lib['maven']['coordinates'])))
+                    else:
+                        # Try to pass as-is (for any other format)
+                        task_libraries.append(Library(**lib))
+                
+                task.libraries = task_libraries
         
         # Configure compute
         if use_serverless:
             # Use serverless compute
-            run = self.client.jobs.submit(
-                run_name=f"dbx-test-{int(time.time())}",
-                tasks=[task],
-            )
+            if job_environments:
+                run = self.client.jobs.submit(
+                    run_name=f"dbx-test-{int(time.time())}",
+                    tasks=[task],
+                    environments=job_environments,
+                )
+            else:
+                run = self.client.jobs.submit(
+                    run_name=f"dbx-test-{int(time.time())}",
+                    tasks=[task],
+                )
         elif cluster_id:
             # Use existing cluster
             task.existing_cluster_id = cluster_id
@@ -232,7 +360,7 @@ class DatabricksHelper:
             objects = self.client.workspace.list(workspace_path)
             
             for obj in objects:
-                if obj.object_type and obj.object_type.value == "NOTEBOOK":
+                if obj.object_type and obj.object_type.value in ["NOTEBOOK", "FILE"]:
                     # Get notebook name (without path)
                     notebook_name = obj.path.split("/")[-1]
                     
