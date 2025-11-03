@@ -9,56 +9,77 @@ You can now run tests that are already in your Databricks workspace without uplo
 
 ## Command
 
+The framework automatically detects workspace paths (starting with `/Workspace/` or `/Repos/`), so you can simply run:
+
 ```bash
-dbx_test run --remote --workspace-tests --profile <profile> --tests-dir "<workspace_path>"
+dbx_test run --remote --profile <profile> --tests-dir "<workspace_path>"
 ```
+
+**Note**: The `--workspace-tests` flag is optional when using workspace paths. The framework auto-detects them!
 
 ### Parameters
 
 - `--remote` - Required: Run tests remotely on Databricks
-- `--workspace-tests` - **New Flag**: Tells the framework tests are already in workspace (don't upload)
+- `--workspace-tests` - Optional: Explicitly tell the framework tests are in workspace (auto-detected for /Workspace/ and /Repos/ paths)
 - `--profile <profile>` - Databricks CLI profile to use (e.g., `adb`, `dev`, `prod`)
-- `--tests-dir "<workspace_path>"` - Workspace path where your tests are located
-- `--pattern` - Optional: Pattern to match test files (default: `**/*_test.py`)
+- `--tests-dir "<workspace_path>"` - Workspace path where your tests are located (must start with /Workspace/ or /Repos/)
+- `--pattern` - Optional: Pattern to match test files (default: `test_*` or `*_test`)
 - `--verbose` - Optional: Show detailed output
 
 ## Examples
 
-### Example 1: Run All Tests in a Workspace Directory
+### Example 1: Run All Tests in a Workspace Directory (Auto-Detection)
 
 ```bash
-dbx_test run --remote --workspace-tests \
+# The framework auto-detects the workspace path - no --workspace-tests needed!
+dbx_test run --remote \
   --profile adb \
   --tests-dir "/Workspace/Users/james.parham@databricks.com/dbx_test" \
   --verbose
 ```
 
-### Example 2: Run Tests with Custom Pattern
+### Example 2: Run Tests in Databricks Repos
 
 ```bash
-dbx_test run --remote --workspace-tests \
+# Works with Repos paths too
+dbx_test run --remote \
   --profile prod \
-  --tests-dir "/Workspace/Repos/my-repo/tests" \
-  --pattern "*integration*" \
+  --tests-dir "/Repos/my-repo/tests" \
   --verbose
 ```
 
-### Example 3: Run Tests in a Repos Folder
+### Example 3: Explicit Workspace Tests Flag (Optional)
 
 ```bash
+# You can still use --workspace-tests explicitly if preferred
 dbx_test run --remote --workspace-tests \
   --profile dev \
-  --tests-dir "/Repos/Staging/my-project/tests"
+  --tests-dir "/Workspace/Repos/Staging/my-project/tests"
+```
+
+### Example 4: Running from Bundle Deployment Path
+
+```bash
+# Perfect for testing bundled applications
+dbx_test run --remote \
+  --profile aws-west \
+  --tests-dir "/Workspace/Users/james.parham@databricks.com/.bundle/dbx_test_example/dev/files/src_code_example"
 ```
 
 ## Notebook Naming Convention
 
-By default, the framework looks for notebooks matching the pattern `**/*_test.py`. Your notebooks should be named like:
+The framework automatically discovers notebooks matching pytest-style patterns:
+- `test_*` (starts with test_)
+- `*_test` (ends with _test)
+
+Your notebooks should be named like:
+- `test_my_feature`
 - `my_feature_test`
+- `test_integration`
 - `integration_test`
 - `data_validation_test`
 
-**Note**: Databricks notebooks don't show the `.py` extension in the UI, but the pattern matching handles this automatically.
+**Note**: Databricks notebooks don't show the `.py` extension in the UI, but the discovery handles this automatically.
 
 ## How It Works
 
@@ -106,33 +127,48 @@ The framework will:
 
 ## Troubleshooting
 
+### "Workspace directory not found"
+
+**Error message:** `Workspace directory not found: /Workspace/... Please verify the path exists in your Databricks workspace.`
+
+**Possible causes:**
+1. Directory doesn't exist in the workspace
+2. Typo in the path
+3. Authentication issue
+
+**Solution:**
+- Verify path exists: `databricks workspace list "/Workspace/Users/james.parham@databricks.com"`
+- Check parent directory: `databricks workspace list "/Workspace/Users"`
+- Verify you can access the folder in Databricks UI
+- Check profile: `databricks configure --token --profile <profile>`
+
 ### "No test notebooks found"
 
 **Possible causes:**
 1. Directory is empty
-2. Notebook names don't match the pattern
+2. Notebook names don't match the pytest pattern (test_* or *_test)
 
 **Solution:**
 - Check your workspace directory in Databricks UI
-- Ensure notebooks end with `_test` (e.g., `my_test`, not `my_test.py`)
-- Use custom pattern: `--pattern "*test*"`
+- Ensure notebooks start with `test_` or end with `_test` (e.g., `test_my_feature`, `my_feature_test`)
 - Use `--verbose` to see discovery details
+- Verify notebooks exist in the exact path you specified
 
-### "Error accessing workspace tests"
+### "Error: Tests directory not found"
 
-**Possible causes:**
-1. Workspace path doesn't exist
-2. Authentication issue
+**This error means** you're trying to use a local path that doesn't exist.
 
 **Solution:**
-- Verify path: `databricks workspace list "/Workspace/Users/james.parham@databricks.com"`
-- Check profile: `databricks configure --token --profile adb`
+- For workspace tests, ensure the path starts with `/Workspace/` or `/Repos/`
+- For local tests, verify the directory exists on your filesystem
+- Example workspace path: `/Workspace/Users/james.parham@databricks.com/dbx_test`
 
 ### "Permission denied"
 
 **Solution:**
 - Ensure your Databricks token has workspace read/execute permissions
 - Check if you can access the folder in Databricks UI
+- Try running with `--verbose` to see more details
 
 ## Comparison: Local vs Workspace Tests
 
@@ -235,6 +271,13 @@ The `--workspace-tests` flag enables you to:
 
 **Command to remember:**
 ```bash
-dbx_test run --remote --workspace-tests --profile <profile> --tests-dir "<workspace_path>"
+# Simple and automatic!
+dbx_test run --remote --profile <profile> --tests-dir "<workspace_path>"
 ```
+
+**Key Benefits of Auto-Detection:**
+- ✅ No need to remember the `--workspace-tests` flag
+- ✅ Cleaner, simpler commands
+- ✅ Works with both `/Workspace/` and `/Repos/` paths
+- ✅ Backwards compatible - `--workspace-tests` still works if you prefer explicit flags
 

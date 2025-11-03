@@ -245,6 +245,9 @@ class DatabricksHelper:
             
             return notebooks
         except Exception as e:
-            print(f"Error listing notebooks in {workspace_path}: {e}")
-            return []
+            # Check if it's a directory not found error
+            error_str = str(e).lower()
+            if "does not exist" in error_str or "not found" in error_str:
+                raise FileNotFoundError(f"Workspace directory not found: {workspace_path}. Please verify the path exists in your Databricks workspace.")
+            raise RuntimeError(f"Error listing notebooks in {workspace_path}: {e}")
 

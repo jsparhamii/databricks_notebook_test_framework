@@ -81,13 +81,13 @@ def cli():
 @click.option(
     "--tests-dir",
     default="tests",
-    help="Directory containing test notebooks (local path or workspace path if --workspace-tests)",
+    help="Directory containing test notebooks (local path, or workspace path starting with /Workspace/ or /Repos/)",
 )
 @click.option(
     "--workspace-tests",
     is_flag=True,
     default=False,
-    help="Tests are already in Databricks workspace (don't upload)",
+    help="Tests are already in Databricks workspace (auto-detected for /Workspace/ and /Repos/ paths)",
 )
 def run(local, remote, env, parallel, output_format, output_dir, config, profile, verbose, tests_dir, workspace_tests):
     """Execute test notebooks.
@@ -137,10 +137,17 @@ def run(local, remote, env, parallel, output_format, output_dir, config, profile
             if verbose:
                 console.print(f"[dim]Using output directory: {output_dir}[/dim]")
         
+        # Auto-detect workspace paths (starts with /Workspace/ or /Repos/)
+        is_workspace_path = tests_dir.startswith("/Workspace/") or tests_dir.startswith("/Repos/")
+        
         # Handle workspace tests vs local tests
-        if workspace_tests:
+        if workspace_tests or (remote and is_workspace_path):
             if local:
                 console.print("[red]Error: --workspace-tests can only be used with --remote[/red]")
+                sys.exit(1)
+            
+            if not remote:
+                console.print("[red]Error: Workspace paths require --remote flag[/red]")
                 sys.exit(1)
             
             if verbose:
