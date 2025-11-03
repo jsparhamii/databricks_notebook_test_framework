@@ -5,14 +5,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dbx_test"
 version = "0.1.0"
-description = "Automated testing framework for Databricks notebooks"
+description = "Serverless-first testing framework for Databricks notebooks with Asset Bundle support"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "James Parham", email = "james.parham@databricks.com"}
 ]
-keywords = ["databricks", "testing", "notebooks", "unit-testing", "spark"]
+keywords = ["databricks", "testing", "notebooks", "unit-testing", "spark", "serverless", "asset-bundles"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -21,6 +21,8 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
 dependencies = [
@@ -47,9 +49,10 @@ dev = [
 dbx_test = "dbx_test.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/yourusername/dbx_test"
-Documentation = "https://github.com/yourusername/dbx_test/docs"
-Repository = "https://github.com/yourusername/dbx_test"
+Homepage = "https://github.com/jsparhamii/dbx_test"
+Documentation = "https://github.com/jsparhamii/dbx_test/tree/main/docs"
+Repository = "https://github.com/jsparhamii/dbx_test"
+Issues = "https://github.com/jsparhamii/dbx_test/issues"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
