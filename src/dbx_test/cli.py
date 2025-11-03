@@ -15,6 +15,7 @@ from dbx_test.runner_local import LocalTestRunner
 from dbx_test.runner_remote import RemoteTestRunner
 from dbx_test.reporting import TestReporter
 from dbx_test.artifacts import ArtifactManager
+from dbx_test.bundle import get_bundle_tests_dir, is_bundle_project
 
 
 console = Console()
@@ -46,6 +47,11 @@ def cli():
     "--env",
     default="dev",
     help="Environment (dev/test/prod)",
+)
+@click.option(
+    "--target",
+    default=None,
+    help="Databricks Asset Bundle target (auto-detects bundle project and sets remote tests path)",
 )
 @click.option(
     "--parallel",
@@ -81,7 +87,7 @@ def cli():
 @click.option(
     "--tests-dir",
     default="tests",
-    help="Directory containing test notebooks (local path, or workspace path starting with /Workspace/ or /Repos/)",
+    help="Directory containing test notebooks (local path, workspace path, or relative path for bundle projects)",
 )
 @click.option(
     "--workspace-tests",
@@ -89,13 +95,46 @@ def cli():
     default=False,
     help="Tests are already in Databricks workspace (auto-detected for /Workspace/ and /Repos/ paths)",
 )
-def run(local, remote, env, parallel, output_format, output_dir, config, profile, verbose, tests_dir, workspace_tests):
+def run(local, remote, env, target, parallel, output_format, output_dir, config, profile, verbose, tests_dir, workspace_tests):
     """Execute test notebooks.
     
     Automatically discovers test notebooks matching pytest-style patterns:
     - test_*.py (files starting with test_)
     - *_test.py (files ending with _test)
+    
+    For Databricks Asset Bundle projects, use --target to automatically detect
+    the remote workspace path for your tests.
     """
+    
+    # Handle bundle target if specified
+    bundle_detected = False
+    if target:
+        if verbose:
+            console.print(f"[dim]Detecting Databricks Asset Bundle with target: {target}[/dim]")
+        
+        # Get bundle tests directory
+        bundle_tests_dir, bundle_name = get_bundle_tests_dir(
+            target=target,
+            tests_dir_relative=tests_dir,
+            profile=profile,
+        )
+        
+        if bundle_tests_dir:
+            bundle_detected = True
+            tests_dir = bundle_tests_dir
+            remote = True  # Automatically set remote flag for bundle targets
+            workspace_tests = True  # Bundle tests are in workspace
+            
+            if verbose:
+                console.print(f"[green]✓ Detected bundle project: {bundle_name}[/green]")
+                console.print(f"[dim]  Target: {target}[/dim]")
+                console.print(f"[dim]  Tests location: {tests_dir}[/dim]")
+        else:
+            console.print(f"[yellow]Warning: Could not detect bundle configuration for target '{target}'[/yellow]")
+            console.print("[dim]Make sure you have a databricks.yml file with the specified target.[/dim]")
+            if not remote and not local:
+                console.print("[red]Error: When bundle detection fails, you must explicitly specify --local or --remote[/red]")
+                sys.exit(1)
     
     # Validate run mode
     if not local and not remote:
