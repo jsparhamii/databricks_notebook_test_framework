@@ -364,8 +364,16 @@ class DatabricksHelper:
                     # Get notebook name (without path)
                     notebook_name = obj.path.split("/")[-1]
                     
-                    # Pytest-style discovery: test_* or *_test
-                    if notebook_name.startswith("test_") or notebook_name.endswith("_test"):
+                    # Only include Python files (.py extension or no extension for notebooks)
+                    # Skip non-Python files like .yml, .json, .md, etc.
+                    if "." in notebook_name:
+                        # Has extension - must be .py
+                        if not notebook_name.endswith(".py"):
+                            continue
+                    
+                    # Pytest-style discovery: test_* or *_test (without .py extension)
+                    name_without_ext = notebook_name.replace(".py", "")
+                    if name_without_ext.startswith("test_") or name_without_ext.endswith("_test"):
                         notebooks.append(obj.path)
                 elif obj.object_type and obj.object_type.value == "DIRECTORY":
                     # Recursively list subdirectories

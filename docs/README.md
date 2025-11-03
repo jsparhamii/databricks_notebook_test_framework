@@ -1,400 +1,298 @@
-# Databricks Notebook Test Framework - Documentation
+# Databricks Notebook Test Framework Documentation
 
-Welcome to the comprehensive documentation for the Databricks Notebook Test Framework.
+Comprehensive documentation for the dbx_test framework - a **serverless-first** testing solution with **Databricks Asset Bundle** integration.
 
-## Documentation Index
+## Table of Contents
 
 ### Getting Started
+1. [Quick Start Guide](../QUICKSTART.md) - Get up and running in 5 minutes
+2. [Installation](installation.md) - Detailed installation instructions
+3. [Configuration](configuration.md) - Configure your test environment
 
-1. **[Quick Start](../QUICKSTART.md)** - Get up and running in 5 minutes
-2. **[Installation](installation.md)** - Detailed installation instructions
-3. **[Configuration](configuration.md)** - Complete configuration reference
+### Core Features
 
-### Core Guides
-
-4. **[Writing Tests](writing_tests.md)** - Best practices for writing effective tests
-5. **[CI/CD Integration](ci_cd_integration.md)** - Integrate with GitHub Actions, Azure DevOps, etc.
-
-### Reference
-
-6. **[CLI Reference](#cli-reference)** - Command-line interface documentation
-7. **[Configuration Schema](#configuration-schema)** - YAML configuration options
-8. **[API Reference](#api-reference)** - Python API documentation
-
-### Contributing
-
-9. **[Contributing Guide](../CONTRIBUTING.md)** - How to contribute to the project
-10. **[Changelog](../CHANGELOG.md)** - Version history and changes
-
----
-
-## CLI Reference
-
-### Global Options
-
-```bash
-dbx_test [OPTIONS] COMMAND [ARGS]...
-```
-
-**Options:**
-- `--version` - Show version and exit
-- `--help` - Show help message and exit
-
-### Commands
-
-#### `run` - Execute Tests
-
-Run test notebooks locally or remotely.
-
-```bash
-dbx_test run [OPTIONS]
-```
-
-**Options:**
-- `--local` - Run tests locally using nuttercli
-- `--remote` - Run tests remotely on Databricks
-- `--pattern TEXT` - Pattern to filter test notebooks
-- `--env TEXT` - Environment (dev/test/prod)
-- `--parallel` - Enable parallel test execution (remote only)
-- `--output-format TEXT` - Output format(s): console, junit, json, html (multiple allowed)
-- `--config PATH` - Path to configuration file (default: config/test_config.yml)
-- `--verbose` - Enable verbose output
-- `--tests-dir PATH` - Directory containing test notebooks (default: tests)
-
-**Examples:**
-
-```bash
-# Run locally
-dbx_test run --local
-
-# Run remotely on dev environment
-dbx_test run --remote --env dev
-
-# Run with specific pattern
-dbx_test run --local --pattern "*integration*"
-
-# Run with multiple output formats
-dbx_test run --remote --output-format junit --output-format html
-
-# Run in parallel
-dbx_test run --remote --parallel --env test
-```
-
-#### `discover` - Discover Tests
-
-Discover all test notebooks in a directory.
-
-```bash
-dbx_test discover [OPTIONS]
-```
-
-**Options:**
-- `--pattern TEXT` - Pattern to match test files (default: **/*_test.py)
-- `--tests-dir PATH` - Directory containing test notebooks (default: tests)
+#### Databricks Asset Bundle Support
+- **Auto-Detection**: Framework automatically detects `databricks.yml`
+- **Path Resolution**: Automatically resolves workspace paths based on target
+- **Seamless Integration**: Works with `databricks bundle deploy`
 
 **Example:**
-
 ```bash
-dbx_test discover --tests-dir tests
+dbx_test run --target dev --profile my-profile
+# Auto-resolves to: /Workspace/Users/you@company.com/.bundle/project/dev/files/tests
 ```
 
-#### `report` - Generate Reports
+#### Serverless Compute (Recommended)
+- [Serverless Environments](serverless_environments.md) - Inline dependency management 🚀
+- [Installing Libraries](installing_libraries.md) - PyPI, wheels, Git repos
 
-Generate test report from a previous run.
+**Features:**
+- ✅ Automatic inline environment creation
+- ✅ Dependency installation on-the-fly
+- ✅ Fast startup times
+- ✅ Cost-effective pay-per-use
 
-```bash
-dbx_test report [OPTIONS]
-```
+#### Test Discovery & Execution
+- [Pytest-Style Discovery](pytest_discovery.md) - Automatic `test_*` and `*_test` patterns 🔍
+- [Workspace Tests](workspace_tests.md) - Run tests from Databricks workspace 🔄
+- [Parallel Execution](parallel_execution.md) - Faster test runs with parallel jobs
 
-**Options:**
-- `--run-id TEXT` - Run ID (default: latest)
-- `--format TEXT` - Output format: console, junit, json, html (default: console)
-- `--output-dir PATH` - Test results directory (default: .dbx_test-results)
+#### Writing Tests
+- [Notebook Usage Guide](notebook_usage.md) - Run tests in Databricks notebooks 📘
+- [Multiple Test Classes](multiple_test_classes.md) - Multiple classes per notebook
+- [Testing Application Code](testing_application_code.md) - Test `src/` from `tests/` 📦
+- [Notebook Results](notebook_results.md) - Return results from notebooks to CLI 📊
 
-**Examples:**
+### Configuration & Setup
 
-```bash
-# Show latest results
-dbx_test report
+- [Configuration Guide](configuration.md) - Detailed config options
+- [Databricks CLI Authentication](databricks_cli_auth.md) - Set up authentication
+- [Cluster Configuration](cluster_configuration.md) - Serverless vs cluster options
 
-# Generate HTML report
-dbx_test report --format html
+### Integration
 
-# Show specific run
-dbx_test report --run-id 20250128_143022
-```
+- [CI/CD Integration](ci_cd_integration.md) - GitHub Actions, Azure DevOps, Jenkins
 
-#### `upload` - Upload Notebooks
+### Examples
 
-Upload test notebooks to Databricks workspace.
+- [Testing src/ Code](../examples/src_code_example/) - Real-world workspace pattern
 
-```bash
-dbx_test upload [OPTIONS]
-```
+## Quick Reference
 
-**Options:**
-- `--tests-dir PATH` - Directory containing test notebooks (default: tests)
-- `--workspace-path TEXT` - Workspace path prefix (required)
-- `--config PATH` - Path to configuration file (default: config/test_config.yml)
-- `--pattern TEXT` - Pattern to match test files (default: **/*_test.py)
-
-**Example:**
+### Basic Commands
 
 ```bash
-dbx_test upload --workspace-path "/Workspace/Repos/myuser/tests"
+# Bundle project
+dbx_test run --target dev --profile my-profile
+
+# Workspace path
+dbx_test run --tests-dir /Workspace/Users/you@company.com/tests --profile my-profile
+
+# Create new test
+dbx_test scaffold my_feature
+
+# Upload tests
+dbx_test upload --tests-dir tests \
+  --workspace-path /Workspace/Users/you@company.com/tests \
+  --profile my-profile
 ```
 
-#### `scaffold` - Create Test Template
-
-Create a new test notebook from template.
-
-```bash
-dbx_test scaffold [OPTIONS] NOTEBOOK_NAME
-```
-
-**Options:**
-- `--output-dir PATH` - Output directory for test notebook (default: tests)
-
-**Example:**
-
-```bash
-dbx_test scaffold my_new_test
-```
-
----
-
-## Configuration Schema
-
-Complete YAML configuration schema:
+### Configuration Example
 
 ```yaml
 workspace:
-  host: string              # Required: Databricks workspace URL
-  token: string             # Optional: Direct token (not recommended)
-  token_env: string         # Optional: Environment variable name (default: DATABRICKS_TOKEN)
+  profile: "default"
 
 cluster:
-  size: string              # T-shirt size: S, M, L, XL (default: M)
-  spark_version: string     # Spark version (default: 13.3.x-scala2.12)
-  node_type_id: string      # Optional: Node type
-  driver_node_type_id: string  # Optional: Driver node type
-  num_workers: int          # Optional: Fixed number of workers
-  autoscale_min_workers: int   # Optional: Min workers for autoscaling
-  autoscale_max_workers: int   # Optional: Max workers for autoscaling
-  cluster_policy_id: string    # Optional: Cluster policy ID
-  spark_conf:               # Optional: Spark configuration
-    key: value
-  spark_env_vars:           # Optional: Environment variables
-    key: value
-  custom_tags:              # Optional: Custom tags
-    key: value
+  # Serverless with inline dependencies
+  libraries:
+    - whl: "git+https://github.com/org/repo.git"
+    - pypi:
+        package: "pandas==2.0.0"
 
 execution:
-  timeout: int              # Timeout per test in seconds (default: 600)
-  max_retries: int          # Maximum retry attempts (default: 2)
-  parallel: boolean         # Enable parallel execution (default: false)
-  max_parallel_jobs: int    # Max concurrent jobs (default: 5)
-  poll_interval: int        # Poll interval for status (default: 10)
-
-paths:
-  workspace_root: string    # Workspace root path (default: /Workspace/Repos/production)
-  test_pattern: string      # Glob pattern for tests (default: **/*_test.py)
-  local_tests_dir: string   # Local tests directory (default: tests)
+  timeout: 600
+  parallel: false
 
 reporting:
-  output_dir: string        # Output directory (default: .dbx_test-results)
-  formats: list             # Report formats (default: [junit, console, json])
-  fail_on_error: boolean    # Fail on test errors (default: true)
-  verbose: boolean          # Verbose output (default: false)
-
-parameters:                 # Optional: Default parameters for all tests
-  key: value
+  output_dir: ".dbx-test-results"
+  formats: ["console", "junit"]
 ```
 
----
-
-## API Reference
-
-### Main Classes
-
-#### `TestConfig`
-
-Configuration management class.
+### Test Template
 
 ```python
-from dbx_test import TestConfig
+from dbx_test import NotebookTestFixture
 
-# Load from YAML
-config = TestConfig.from_yaml("config/test_config.yml")
-
-# Create from dictionary
-config = TestConfig.from_dict(config_dict)
-
-# Get default configuration
-config = TestConfig.get_default()
+class TestMyFeature(NotebookTestFixture):
+    def run_setup(self):
+        """Setup runs before tests"""
+        self.data = spark.createDataFrame([(1, "a")], ["id", "val"])
+        self.data.createOrReplaceTempView("test_data")
+    
+    def test_example(self):
+        """Test something"""
+        result = spark.sql("SELECT * FROM test_data")
+        assert result.count() == 1
+    
+    def run_cleanup(self):
+        """Cleanup runs after tests"""
+        spark.sql("DROP VIEW IF EXISTS test_data")
 ```
 
-#### `TestDiscovery`
+## Architecture Overview
 
-Test discovery engine.
+```
+Remote Execution on Databricks
+    ↓
+Serverless Compute (Recommended)
+    ↓
+Inline Environment
+    • Auto-created with dependencies
+    • Libraries installed on-the-fly
+    • Clean execution environment
+    ↓
+Test Execution
+    • Parallel or sequential
+    • Rich output and reporting
+    • JUnit XML for CI/CD
+```
+
+## Key Concepts
+
+### 1. Serverless-First Design
+
+The framework is optimized for Databricks serverless compute:
+
+- **Automatic Environment Management**: Creates inline environments with your dependencies
+- **Fast Startup**: No cluster management overhead
+- **Cost-Effective**: Pay only for actual test execution time
+- **Scalable**: Automatically handles parallelism
+
+### 2. Databricks Asset Bundle Native
+
+Seamless integration with Databricks Asset Bundles:
+
+- **Auto-Detection**: Finds `databricks.yml` automatically
+- **Path Resolution**: Resolves workspace paths based on target
+- **Deployment Integration**: Works with `databricks bundle deploy`
+- **Multi-Target Support**: Easy dev/staging/prod testing
+
+### 3. Pytest-Style Discovery
+
+Familiar test discovery patterns:
+
+- Files starting with `test_*` (e.g., `test_feature.py`)
+- Files ending with `*_test` (e.g., `feature_test.py`)
+- Recursive directory search
+- Automatic notebook detection
+
+### 4. Remote Execution Only
+
+**Why remote-only?**
+
+- ✅ **Consistency**: Tests run in the same environment as production
+- ✅ **Features**: Access to all Databricks features (Delta, MLflow, etc.)
+- ✅ **Simplicity**: No local Spark setup required
+- ✅ **Reality**: Tests match actual deployment environment
+
+## Common Use Cases
+
+### 1. Bundle Project Testing
+
+```bash
+# Deploy
+databricks bundle deploy --target dev
+
+# Test
+dbx_test run --target dev --profile my-profile
+```
+
+### 2. Workspace Testing
+
+```bash
+# Upload
+dbx_test upload --tests-dir tests \
+  --workspace-path /Workspace/Users/you@company.com/tests \
+  --profile my-profile
+
+# Test
+dbx_test run --tests-dir /Workspace/Users/you@company.com/tests \
+  --profile my-profile
+```
+
+### 3. CI/CD Pipeline
+
+```bash
+dbx_test run --target dev --profile ci \
+  --output-format junit \
+  --output-format html
+```
+
+### 4. Interactive Development
 
 ```python
-from dbx_test import TestDiscovery
+# In a Databricks notebook
+from dbx_test import run_notebook_tests
+import json
 
-# Initialize
-discovery = TestDiscovery(root_dir="tests", pattern="**/*_test.py")
+# Your test classes here...
 
-# Discover tests
-tests = discovery.discover()
-
-# Filter tests
-filtered = discovery.filter_tests(tests, name_filter="*integration*")
-
-# Print summary
-discovery.print_summary(tests)
+results = run_notebook_tests()
+dbutils.notebook.exit(json.dumps(results))
 ```
 
-#### `LocalTestRunner`
+## Best Practices
 
-Local test execution.
+### 1. Use Serverless Compute
+- Faster startup times
+- Lower costs for testing
+- Automatic scaling
 
-```python
-from dbx_test import LocalTestRunner
+### 2. Leverage Asset Bundles
+- Simplified deployment
+- Environment consistency
+- Easy multi-environment testing
 
-# Initialize
-runner = LocalTestRunner(verbose=True)
-
-# Check if Nutter is installed
-if runner.check_nutter_installed():
-    # Run tests
-    results = runner.run_tests(
-        test_notebooks=tests,
-        parameters={"env": "dev"},
-        timeout=600
-    )
+### 3. Install Dependencies via Config
+```yaml
+cluster:
+  libraries:
+    - whl: "git+https://github.com/org/your-package.git"
 ```
 
-#### `RemoteTestRunner`
-
-Remote test execution on Databricks.
-
-```python
-from dbx_test import RemoteTestRunner
-
-# Initialize
-runner = RemoteTestRunner(config=test_config, verbose=True)
-
-# Run tests
-results = runner.run_tests(
-    test_notebooks=tests,
-    parameters={"env": "dev"}
-)
+### 4. Use Parallel Execution for Large Test Suites
+```yaml
+execution:
+  parallel: true
+  max_parallel_jobs: 5
 ```
 
-#### `TestReporter`
-
-Report generation.
-
-```python
-from dbx_test import TestReporter
-
-# Initialize
-reporter = TestReporter(verbose=True)
-
-# Generate JUnit XML
-reporter.generate_junit_xml(results, output_path)
-
-# Generate HTML report
-reporter.generate_html_report(results, output_path)
-
-# Print console report
-reporter.print_console_report(results)
+### 5. Generate Multiple Report Formats
+```yaml
+reporting:
+  formats:
+    - "console"  # For development
+    - "junit"    # For CI/CD
+    - "html"     # For reports
 ```
-
----
 
 ## Troubleshooting
 
 ### Common Issues
 
-**Issue**: Tests not discovered
-- Check file naming (must end with `_test.py`)
-- Verify class inherits from `NutterFixture`
-- Check test methods start with `test_`
+**Bundle not detected?**
+- Check `databricks.yml` exists in project root
+- Use `--verbose` flag for debugging
 
-**Issue**: Cannot connect to Databricks
-- Verify `DATABRICKS_TOKEN` environment variable
-- Check workspace URL format
-- Verify token hasn't expired
+**Dependencies not installing?**
+- Verify library syntax in config
+- Check workspace permissions
+- Consider pre-created environments for production
 
-**Issue**: Tests timeout
-- Increase timeout in configuration
-- Optimize test queries
-- Use smaller test datasets
+**Tests not found?**
+- Ensure files match `test_*` or `*_test` pattern
+- Check workspace path is correct
+- Use `--verbose` to see discovery process
 
-**Issue**: Parallel execution fails
-- Check `max_parallel_jobs` setting
-- Verify workspace has sufficient resources
-- Try sequential execution first
-
----
-
-## Examples
-
-### Basic Test
-
-```python
-from nutter.testing import NutterFixture
-
-class TestExample(NutterFixture):
-    def run_setup(self):
-        self.df = spark.createDataFrame([(1, "a")], ["id", "value"])
-    
-    def test_count(self):
-        assert self.df.count() == 1
-    
-    def run_cleanup(self):
-        pass
+**Authentication fails?**
+```bash
+databricks auth profiles
+databricks workspace list /
 ```
 
-### Integration Test
+## Further Reading
 
-```python
-class TestIntegration(NutterFixture):
-    def run_setup(self):
-        # Create bronze table
-        spark.sql("CREATE TABLE bronze AS SELECT * FROM source")
-        # Transform to silver
-        spark.sql("CREATE TABLE silver AS SELECT * FROM bronze WHERE valid = 1")
-    
-    def test_no_data_loss(self):
-        bronze_count = spark.table("bronze").count()
-        silver_count = spark.table("silver").count()
-        assert silver_count <= bronze_count
-    
-    def run_cleanup(self):
-        spark.sql("DROP TABLE IF EXISTS bronze")
-        spark.sql("DROP TABLE IF EXISTS silver")
-```
-
----
-
-## Additional Resources
-
-- [Nutter Documentation](https://github.com/microsoft/nutter)
-- [Databricks SDK Documentation](https://databricks-sdk-py.readthedocs.io/)
-- [Example Tests](../tests/)
-- [Configuration Examples](../config/)
-
----
+- [Configuration Reference](configuration.md) - All config options
+- [API Documentation](../README.md#architecture) - Framework architecture
+- [Examples](../examples/) - Real-world examples
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/dbx_test/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/dbx_test/discussions)
-- **Contributing**: See [CONTRIBUTING.md](../CONTRIBUTING.md)
+- **Issues**: [GitHub Issues](https://github.com/jsparhamii/dbx_test/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/jsparhamii/dbx_test/discussions)
+- **Examples**: See `examples/` directory
 
 ---
 
-Last Updated: 2025-01-28
-
+**Ready to get started?** → [Quick Start Guide](../QUICKSTART.md)

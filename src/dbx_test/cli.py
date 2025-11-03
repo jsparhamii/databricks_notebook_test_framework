@@ -10,8 +10,6 @@ from rich.console import Console
 
 from dbx_test import __version__
 from dbx_test.config import TestConfig
-from dbx_test.discovery import TestDiscovery
-from dbx_test.runner_local import LocalTestRunner
 from dbx_test.runner_remote import RemoteTestRunner
 from dbx_test.reporting import TestReporter
 from dbx_test.artifacts import ArtifactManager
@@ -34,16 +32,6 @@ def cli():
 
 @cli.command()
 @click.option(
-    "--local",
-    is_flag=True,
-    help="Run tests locally",
-)
-@click.option(
-    "--remote",
-    is_flag=True,
-    help="Run tests remotely on Databricks",
-)
-@click.option(
     "--env",
     default="dev",
     help="Environment (dev/test/prod)",
@@ -51,12 +39,12 @@ def cli():
 @click.option(
     "--target",
     default=None,
-    help="Databricks Asset Bundle target (auto-detects bundle project and sets remote tests path)",
+    help="Databricks Asset Bundle target (auto-detects bundle project and resolves workspace path)",
 )
 @click.option(
     "--parallel",
     is_flag=True,
-    help="Enable parallel test execution (remote only)",
+    help="Enable parallel test execution",
 )
 @click.option(
     "--output-format",
@@ -87,7 +75,7 @@ def cli():
 @click.option(
     "--tests-dir",
     default="tests",
-    help="Directory containing test notebooks (local path, workspace path, or relative path for bundle projects)",
+    help="Directory containing test notebooks (workspace path starting with /Workspace/ or /Repos/, or relative path for bundle projects)",
 )
 @click.option(
     "--workspace-tests",
@@ -95,8 +83,8 @@ def cli():
     default=False,
     help="Tests are already in Databricks workspace (auto-detected for /Workspace/ and /Repos/ paths)",
 )
-def run(local, remote, env, target, parallel, output_format, output_dir, config, profile, verbose, tests_dir, workspace_tests):
-    """Execute test notebooks.
+def run(env, target, parallel, output_format, output_dir, config, profile, verbose, tests_dir, workspace_tests):
+    """Execute test notebooks remotely on Databricks.
     
     Automatically discovers test notebooks matching pytest-style patterns:
     - test_*.py (files starting with test_)
@@ -104,6 +92,16 @@ def run(local, remote, env, target, parallel, output_format, output_dir, config,
     
     For Databricks Asset Bundle projects, use --target to automatically detect
     the remote workspace path for your tests.
+    
+    Examples:
+        # Run tests from bundle project
+        dbx_test run --target dev --profile my-profile
+        
+        # Run tests from specific workspace directory
+        dbx_test run --tests-dir /Workspace/Users/user@company.com/tests --profile my-profile
+        
+        # Run tests with custom subdirectory in bundle
+        dbx_test run --target dev --tests-dir src/tests --profile my-profile
     """
     
     # Handle bundle target if specified
@@ -125,7 +123,6 @@ def run(local, remote, env, target, parallel, output_format, output_dir, config,
         if bundle_tests_dir:
             bundle_detected = True
             tests_dir = bundle_tests_dir
-            remote = True  # Automatically set remote flag for bundle targets
             workspace_tests = True  # Bundle tests are in workspace
             
             if verbose:
@@ -135,18 +132,7 @@ def run(local, remote, env, target, parallel, output_format, output_dir, config,
         else:
             console.print(f"[yellow]Warning: Could not detect bundle configuration for target '{target}'[/yellow]")
             console.print("[dim]Make sure you have a databricks.yml file with the specified target.[/dim]")
-            if not remote and not local:
-                console.print("[red]Error: When bundle detection fails, you must explicitly specify --local or --remote[/red]")
-                sys.exit(1)
-    
-    # Validate run mode
-    if not local and not remote:
-        console.print("[red]Error: Must specify --local or --remote[/red]")
-        sys.exit(1)
-    
-    if local and remote:
-        console.print("[red]Error: Cannot specify both --local and --remote[/red]")
-        sys.exit(1)
+            sys.exit(1)
     
     try:
         # Load configuration
@@ -156,12 +142,9 @@ def run(local, remote, env, target, parallel, output_format, output_dir, config,
             if verbose:
                 console.print(f"[dim]Loaded configuration from {config}[/dim]")
         else:
-            if remote:
-                console.print(f"[red]Error: Configuration file not found: {config}[/red]")
-                sys.exit(1)
-            test_config = TestConfig.get_default()
-            if verbose:
-                console.print("[dim]Using default configuration[/dim]")
+            console.print(f"[red]Error: Configuration file not found: {config}[/red]")
+            console.print("[dim]Run 'dbx_test scaffold <notebook_name>' to create one.[/dim]")
+            sys.exit(1)
         
         # Override profile if specified via CLI
         if profile:
@@ -182,22 +165,12 @@ def run(local, remote, env, target, parallel, output_format, output_dir, config,
         # Auto-detect workspace paths (starts with /Workspace/ or /Repos/)
         is_workspace_path = tests_dir.startswith("/Workspace/") or tests_dir.startswith("/Repos/")
         
-        # Handle workspace tests vs local tests
-        if workspace_tests or (remote and is_workspace_path):
-            if local:
-                console.print("[red]Error: --workspace-tests can only be used with --remote[/red]")
-                sys.exit(1)
-            
-            if not remote:
-                console.print("[red]Error: Workspace paths require --remote flag[/red]")
-                sys.exit(1)
-            
+        # All tests run from workspace - either direct workspace path or bundle path
+        if workspace_tests or is_workspace_path or target:
             if verbose:
                 console.print(f"[dim]Running tests from workspace: {tests_dir}[/dim]")
             
-            # For workspace tests, we'll discover and run them directly
-            from dbx_test.runner_remote import RemoteTestRunner
-            
+            # Run workspace tests
             runner = RemoteTestRunner(test_config, verbose=verbose)
             
             console.print(f"\n[bold]Running tests from Databricks workspace: {tests_dir}[/bold]\n")
@@ -264,10 +237,7 @@ def run(local, remote, env, target, parallel, output_format, output_dir, config,
                 
                 console.print(f"Total: {total}, Passed: [green]{passed}[/green], Failed: [red]{failed}[/red]")
                 
-                # Generate reports based on output_format
-                from dbx_test.reporting import TestReporter
-                from dbx_test.artifacts import ArtifactManager
-                
+                # Generate reports
                 artifact_manager = ArtifactManager(test_config.reporting.output_dir)
                 reporter = TestReporter(verbose=verbose)
                 
@@ -289,8 +259,7 @@ def run(local, remote, env, target, parallel, output_format, output_dir, config,
                 # Generate reports
                 for fmt in output_format:
                     if fmt == "console":
-                        # Already displayed above
-                        pass
+                        pass  # Already displayed
                     elif fmt == "junit":
                         output_path = artifact_manager.save_report("", "report.xml")
                         reporter.generate_junit_xml(formatted_results, output_path)
@@ -309,103 +278,23 @@ def run(local, remote, env, target, parallel, output_format, output_dir, config,
                     sys.exit(1)
                 else:
                     console.print("\n[green]🎉 All tests passed![/green]")
-                
-                return
-                
+                    
             except Exception as e:
-                console.print(f"[red]Error accessing workspace tests: {e}[/red]")
+                console.print(f"[red]Error running tests: {e}[/red]")
                 if verbose:
                     import traceback
                     console.print(traceback.format_exc())
                 sys.exit(1)
-        
-        # Original logic for local tests
-        tests_path = Path(tests_dir)
-        if not tests_path.exists():
-            console.print(f"[red]Error: Tests directory not found: {tests_dir}[/red]")
-            sys.exit(1)
-        
-        # Discover tests
-        console.print(f"[dim]Discovering tests matching: test_* or *_test[/dim]")
-        discovery = TestDiscovery(str(tests_path), "**/*_test.py")  # Default pattern
-        tests = discovery.discover()
-        
-        # Also discover test_* pattern
-        discovery2 = TestDiscovery(str(tests_path), "**/test_*.py")
-        tests2 = discovery2.discover()
-        
-        # Merge and deduplicate
-        all_tests = {test["path"]: test for test in tests + tests2}
-        tests = list(all_tests.values())
-        
-        if not tests:
-            console.print("[yellow]No tests discovered[/yellow]")
-            return
-        
-        if verbose:
-            discovery.print_summary(tests)
         else:
-            console.print(f"[cyan]Discovered {len(tests)} test notebook(s)[/cyan]")
-        
-        # Initialize artifact manager
-        artifact_manager = ArtifactManager(test_config.reporting.output_dir)
-        artifact_manager.initialize_run()
-        
-        # Run tests
-        if local:
-            console.print("\n[bold blue]Running tests locally...[/bold blue]\n")
-            runner = LocalTestRunner(verbose=verbose)
-            
-            results = runner.run_tests(
-                tests,
-                parameters=test_config.parameters,
-                timeout=test_config.execution.timeout,
-            )
-        else:
-            console.print("\n[bold blue]Running tests remotely on Databricks...[/bold blue]\n")
-            runner = RemoteTestRunner(test_config, verbose=verbose)
-            results = runner.run_tests(
-                tests,
-                parameters=test_config.parameters,
-            )
-        
-        # Save results
-        artifact_manager.save_results(results)
-        
-        # Generate reports
-        reporter = TestReporter(verbose=verbose)
-        
-        for fmt in output_format:
-            if fmt == "console":
-                reporter.print_console_report(results)
-            elif fmt == "junit":
-                output_path = artifact_manager.save_report(
-                    "",
-                    "report.xml",
-                )
-                reporter.generate_junit_xml(results, output_path)
-                console.print(f"[green]JUnit report saved to: {output_path}[/green]")
-            elif fmt == "json":
-                output_path = artifact_manager.save_report(
-                    "",
-                    "report.json",
-                )
-                reporter.generate_json_report(results, output_path)
-                console.print(f"[green]JSON report saved to: {output_path}[/green]")
-            elif fmt == "html":
-                output_path = artifact_manager.save_report(
-                    "",
-                    "report.html",
-                )
-                reporter.generate_html_report(results, output_path)
-                console.print(f"[green]HTML report saved to: {output_path}[/green]")
-        
-        # Exit with appropriate code
-        if results["summary"]["failed"] > 0 and test_config.reporting.fail_on_error:
+            # No valid test source specified
+            console.print("[red]Error: Must specify either:[/red]")
+            console.print("  • [cyan]--target <name>[/cyan] for bundle projects")
+            console.print("  • [cyan]--tests-dir /Workspace/...[/cyan] for workspace paths")
+            console.print("  • [cyan]--tests-dir /Repos/...[/cyan] for Repos paths")
             sys.exit(1)
-    
+                
     except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
+        console.print(f"[red]Unexpected error: {e}[/red]")
         if verbose:
             import traceback
             console.print(traceback.format_exc())
@@ -413,28 +302,15 @@ def run(local, remote, env, target, parallel, output_format, output_dir, config,
 
 
 @cli.command()
-@click.option(
-    "--pattern",
-    default="**/*_test.py",
-    help="Pattern to match test files",
-)
-@click.option(
-    "--tests-dir",
-    default="tests",
-    help="Directory containing test notebooks",
-)
-def discover(pattern, tests_dir):
-    """Discover test notebooks in the repository."""
+def discover():
+    """Discover test notebooks - removed in favor of automatic discovery.
     
-    tests_path = Path(tests_dir)
-    if not tests_path.exists():
-        console.print(f"[red]Error: Tests directory not found: {tests_dir}[/red]")
-        sys.exit(1)
-    
-    discovery = TestDiscovery(str(tests_path), pattern)
-    tests = discovery.discover()
-    
-    discovery.print_summary(tests)
+    All test discovery is now automatic when running tests.
+    Use: dbx_test run --target <target> --profile <profile>
+    """
+    console.print("[yellow]The 'discover' command has been removed.[/yellow]")
+    console.print("[dim]Test discovery is now automatic when running tests.[/dim]")
+    console.print("[dim]Use: dbx_test run --target <target> --profile <profile>[/dim]")
 
 
 @cli.command()
@@ -694,13 +570,15 @@ reporting:
     console.print(f"  1. Edit {test_file} and add your test cases")
     if not config_path.exists():
         console.print(f"  2. Configure settings in: {config_path}")
-    console.print(f"  2. Run locally: dbx-test run --local")
-    console.print(f"  3. Run remotely: dbx-test run --remote --env dev")
+    console.print(f"  2. Run tests: dbx_test run --target dev --profile <your-profile>")
     
     # If bundle project detected, show bundle-specific instructions
     if is_bundle_project():
         console.print("\n[dim]💡 Tip: This appears to be a Databricks Asset Bundle project.[/dim]")
-        console.print(f"[dim]   You can run tests with: [cyan]dbx_test run --target dev[/cyan][/dim]")
+        console.print(f"[dim]   You can run tests with: [cyan]dbx_test run --target dev --profile <your-profile>[/cyan][/dim]")
+    else:
+        console.print("\n[dim]💡 For non-bundle projects:[/dim]")
+        console.print(f"[dim]   Use workspace path: [cyan]dbx_test run --tests-dir /Workspace/Users/you@company.com/tests --profile <your-profile>[/cyan][/dim]")
 
 
 def main():

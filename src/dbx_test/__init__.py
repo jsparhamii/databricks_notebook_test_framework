@@ -9,8 +9,6 @@ __author__ = "Your Name"
 __license__ = "MIT"
 
 from dbx_test.config import TestConfig
-from dbx_test.discovery import TestDiscovery
-from dbx_test.runner_local import LocalTestRunner
 from dbx_test.runner_remote import RemoteTestRunner
 from dbx_test.reporting import TestReporter
 from dbx_test.testing import NotebookTestFixture, run_tests
@@ -23,8 +21,6 @@ from dbx_test.notebook_runner import (
 
 __all__ = [
     "TestConfig",
-    "TestDiscovery",
-    "LocalTestRunner",
     "RemoteTestRunner",
     "TestReporter",
     "NotebookTestFixture",
