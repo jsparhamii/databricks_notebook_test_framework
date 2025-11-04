@@ -530,8 +530,11 @@ workspace:
 
 cluster:
   # Libraries to install for remote execution
-  # Uncomment and modify as needed:
-  # libraries:
+  # dbx_test is required for remote test execution
+  libraries:
+    - pypi:
+        package: "dbx_test"
+  # Add additional libraries as needed:
   #   - pypi:
   #       package: "pandas==2.0.0"
   #   - whl: "git+https://github.com/your-org/your-package.git"

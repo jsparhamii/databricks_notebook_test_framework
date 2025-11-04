@@ -117,23 +117,54 @@ results = run_notebook_tests(TestMyFirstTest)
 dbutils.notebook.exit(json.dumps(results))
 ```
 
+## Installation Requirements
+
+### Installing dbx_test
+
+**Important:** The `dbx_test` package must be installed on the Databricks cluster for remote test execution.
+
+#### Option 1: Install from PyPI (Recommended)
+
+```bash
+pip install dbx_test
+```
+
+#### Option 2: Install from Source
+
+```bash
+git clone https://github.com/yourusername/dbx_test.git
+cd dbx_test
+pip install -e .
+```
+
+### Configure Cluster Libraries
+
+When running tests remotely, you need to ensure `dbx_test` is available on the cluster. You can do this by:
+
+1. **Using the scaffolding configuration**: The scaffold command generates a `config/test_config.yml` file with a `libraries` section where you can specify `dbx_test`:
+
+```yaml
+cluster:
+  libraries:
+    - pypi:
+        package: "dbx_test"
+```
+
+2. **Install on an existing cluster**: Add `dbx_test` as a library to your cluster through the Databricks UI (Libraries → Install New → PyPI → `dbx_test`)
+
+3. **Use serverless compute with environment**: Create a Databricks environment with `dbx_test` pre-installed (recommended for consistent execution)
+
 ## Running the Tests
 
-### In Databricks UI
-
-1. Upload both notebooks to your workspace:
-   - `src/example` → `/Workspace/Users/your.name@databricks.com/dbx_test/src/example`
-   - `tests/test_example` → `/Workspace/Users/your.name@databricks.com/dbx_test/test/test_example`
-
-2. Run the test notebook directly
-
-### From CLI
+### From CLI (Remote Execution)
 
 ```bash
 # Run workspace tests
 dbx_test run --remote --workspace-tests --profile adb \
   --tests-dir "/Workspace/Users/your.name@databricks.com/dbx_test/test"
 ```
+
+**Note:** When using remote execution, the notebooks must already be in your Databricks workspace at the specified path.
 
 ## Expected Output
 
@@ -156,14 +187,23 @@ Total: 3, Passed: 2, Failed: 1
 
 ## Workspace Structure
 
-This example matches the structure in:
+For this example to work, the notebooks should be in your Databricks workspace:
+
 ```
-/Workspace/Users/james.parham@databricks.com/dbx_test/
+/Workspace/Users/your.name@databricks.com/dbx_test/
 ├── src/
 │   └── example              # Application code notebook
 └── test/
     └── test_example         # Test notebook
 ```
+
+**Getting Notebooks into Your Workspace:**
+
+You can upload notebooks to your workspace using:
+
+1. **Databricks UI**: Upload → Import notebooks
+2. **Databricks CLI**: `databricks workspace import <local-file> <workspace-path>`
+3. **Git/Repos**: Use Databricks Repos to sync from your Git repository (recommended for team workflows)
 
 ## Tips
 
@@ -229,8 +269,9 @@ dbutils.notebook.exit(json.dumps(results))
 
 ## Next Steps
 
-1. Create your own application code in `src/`
-2. Write tests in `tests/`
-3. Upload to Databricks workspace
-4. Run with `dbx_test` CLI
-5. Integrate with CI/CD pipeline
+1. **Install dbx_test on your cluster**: Ensure `dbx_test` is available for remote execution (see [Installation Requirements](#installation-requirements))
+2. Create your own application code in `src/`
+3. Write tests in `tests/`
+4. Upload to Databricks workspace (using UI, CLI, or Repos)
+5. Run with `dbx_test` CLI
+6. Integrate with CI/CD pipeline
