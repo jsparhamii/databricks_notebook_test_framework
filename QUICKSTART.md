@@ -21,7 +21,7 @@ pip install -e .
 Configure Databricks CLI with your workspace:
 
 ```bash
-databricks configure --token
+databricks configure 
 
 # Enter your workspace URL: https://your-workspace.cloud.databricks.com
 # Enter your token: dapi...
@@ -30,8 +30,8 @@ databricks configure --token
 For multiple workspaces, use profiles:
 
 ```bash
-databricks configure --token --profile dev
-databricks configure --token --profile prod
+databricks configure  --profile dev
+databricks configure  --profile prod
 ```
 
 ## 3. Create Your First Test

@@ -34,27 +34,84 @@ class DatabricksHelper:
         overwrite: bool = True
     ) -> str:
         """Upload notebook to Databricks workspace."""
-        with open(local_path, "rb") as f:
+        from databricks.sdk.service.workspace import Language
+        
+        # Ensure parent directory exists
+        parent_path = "/".join(workspace_path.split("/")[:-1])
+        if parent_path:
+            self._ensure_directory_exists(parent_path)
+        
+        # Check if target path exists
+        file_exists = False
+        is_directory = False
+        if overwrite:
+            try:
+                status = self.client.workspace.get_status(workspace_path)
+                file_exists = True
+                if status.object_type and status.object_type.value == "DIRECTORY":
+                    is_directory = True
+            except Exception:
+                # Path doesn't exist
+                pass
+        
+        # If it's a directory, delete it first
+        if is_directory:
+            self.client.workspace.delete(workspace_path, recursive=True)
+            file_exists = False
+        
+        # If file exists and we want to overwrite, delete it first
+        # This avoids the "Overwrite cannot be used for source format" error
+        if file_exists and overwrite:
+            try:
+                self.client.workspace.delete(workspace_path, recursive=False)
+            except Exception:
+                pass
+        
+        with open(local_path, "r", encoding="utf-8") as f:
             content = f.read()
         
-        # Determine format
+        # Determine language and format
         if local_path.suffix == ".ipynb":
             format = ImportFormat.JUPYTER
+            language = None
         elif local_path.suffix == ".py":
             format = ImportFormat.SOURCE
+            language = Language.PYTHON
         else:
             format = ImportFormat.AUTO
+            language = None
         
         try:
-            self.client.workspace.import_(
-                path=workspace_path,
-                format=format,
-                content=content,
-                overwrite=overwrite,
-            )
+            # Use text content for SOURCE format
+            if language:
+                self.client.workspace.import_(
+                    path=workspace_path,
+                    format=format,
+                    language=language,
+                    content=content.encode('utf-8'),
+                )
+            else:
+                self.client.workspace.import_(
+                    path=workspace_path,
+                    format=format,
+                    content=content.encode('utf-8'),
+                )
             return workspace_path
         except Exception as e:
             raise RuntimeError(f"Failed to upload notebook to {workspace_path}: {e}")
+    
+    def _ensure_directory_exists(self, directory_path: str) -> None:
+        """Ensure a directory exists in the workspace, creating it if necessary."""
+        try:
+            self.client.workspace.get_status(directory_path)
+        except Exception:
+            # Directory doesn't exist, create it
+            try:
+                self.client.workspace.mkdirs(directory_path)
+            except Exception as e:
+                # Ignore if directory already exists (race condition)
+                if "already exists" not in str(e).lower():
+                    raise
     
     def notebook_exists(self, workspace_path: str) -> bool:
         """Check if notebook exists in workspace."""

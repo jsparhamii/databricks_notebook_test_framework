@@ -261,15 +261,16 @@ dbx_test scaffold my_feature
 # Detects bundle projects and provides bundle-specific instructions
 ```
 
-### `dbx_test upload`
+### `dbx_test report`
 
-Upload test notebooks to Databricks workspace.
+Generate test report from previous run.
 
 ```bash
-# Upload local tests to workspace
-dbx_test upload --tests-dir tests \
-  --workspace-path /Workspace/Users/you@company.com/tests \
-  --profile dev
+# Generate report from latest run
+dbx_test report --format junit
+
+# Generate from specific run
+dbx_test report --run-id <run_id> --format html
 ```
 
 ## Configuration
